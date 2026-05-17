@@ -1,0 +1,465 @@
+{% extends "base.html" %}
+{% block title %}Project | Timesheet AI{% endblock %}
+
+{% block content %}
+<div class="p-6 lg:p-8 max-w-7xl mx-auto" x-data="projectDetailApp({{ project_id }})" x-init="load()">
+
+  <!-- Back link -->
+  <a href="/projects" class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-3">
+    <i data-lucide="arrow-left" class="w-4 h-4"></i> All projects
+  </a>
+
+  <template x-if="project">
+    <div>
+      <!-- Project header -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-5">
+        <div class="flex justify-between items-start gap-4 flex-wrap">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-1">
+              <h1 class="text-2xl font-bold text-slate-900" x-text="project.name"></h1>
+              <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] uppercase font-semibold"
+                    :class="{
+                      'bg-emerald-100 text-emerald-700': project.status === 'completed',
+                      'bg-amber-100 text-amber-700':     project.status === 'in_progress',
+                      'bg-slate-100 text-slate-600':     project.status === 'not_started',
+                      'bg-blue-100 text-blue-700':       project.status === 'on_hold',
+                    }" x-text="project.status.replace('_', ' ')"></span>
+            </div>
+            <p class="text-sm text-slate-500" x-text="project.description || 'No description'"></p>
+          </div>
+          {% if user.role == 'admin' %}
+          <button @click="openAddTask()"
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-semibold shadow-lg shadow-brand-500/30 hover:opacity-95">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add task
+          </button>
+          {% endif %}
+        </div>
+
+        <!-- Mini stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
+          <div class="bg-slate-50 rounded-lg p-3">
+            <p class="text-[10px] uppercase font-semibold text-slate-500">Total tasks</p>
+            <p class="text-xl font-bold mt-0.5" x-text="project.tasks ? project.tasks.length : 0"></p>
+          </div>
+          <div class="bg-emerald-50 rounded-lg p-3">
+            <p class="text-[10px] uppercase font-semibold text-emerald-700">Completed</p>
+            <p class="text-xl font-bold text-emerald-700 mt-0.5" x-text="completedCount()"></p>
+          </div>
+          <div class="bg-amber-50 rounded-lg p-3">
+            <p class="text-[10px] uppercase font-semibold text-amber-700">In progress</p>
+            <p class="text-xl font-bold text-amber-700 mt-0.5" x-text="inProgressCount()"></p>
+          </div>
+          <div class="bg-red-50 rounded-lg p-3">
+            <p class="text-[10px] uppercase font-semibold text-red-700">Delayed</p>
+            <p class="text-xl font-bold text-red-700 mt-0.5" x-text="delayedCount()"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tasks table -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100 flex justify-between items-center">
+          <h2 class="font-semibold flex items-center gap-2"><i data-lucide="list" class="w-4 h-4 text-brand-500"></i> Tasks</h2>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-[11px] uppercase text-slate-500">
+              <tr>
+                <th class="px-3 py-2 text-left">Phase</th>
+                <th class="px-3 py-2 text-left">Category</th>
+                <th class="px-3 py-2 text-left min-w-[200px]">Task description</th>
+                <th class="px-3 py-2 text-left">Assignees</th>
+                <th class="px-3 py-2 text-left">Planned dates</th>
+                <th class="px-3 py-2 text-left">Actual dates</th>
+                <th class="px-3 py-2 text-right">Planned h</th>
+                <th class="px-3 py-2 text-right">Actual h</th>
+                <th class="px-3 py-2 text-center">Status</th>
+                <th class="px-3 py-2 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <template x-for="t in project.tasks" :key="t.id">
+                <tr class="hover:bg-slate-50">
+                  <td class="px-3 py-2.5 text-xs" x-text="t.milestone_phase || '—'"></td>
+                  <td class="px-3 py-2.5 text-xs" x-text="t.category || '—'"></td>
+                  <td class="px-3 py-2.5">
+                    <p class="font-medium text-slate-800 text-sm" x-text="t.task_description"></p>
+                    <p class="text-[11px] text-slate-500 mt-0.5" x-show="t.action_item">
+                      <span class="font-semibold">Action:</span> <span x-text="t.action_item"></span>
+                    </p>
+                  </td>
+                  <td class="px-3 py-2.5">
+                    <div class="flex flex-wrap gap-1">
+                      <template x-for="a in t.assignees" :key="a.id">
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand-50 text-brand-700 font-medium" x-text="a.full_name"></span>
+                      </template>
+                    </div>
+                  </td>
+                  <td class="px-3 py-2.5 text-xs">
+                    <p x-text="t.planned_start_date || '—'"></p>
+                    <p x-text="t.planned_end_date || '—'" class="text-slate-500"></p>
+                  </td>
+                  <td class="px-3 py-2.5 text-xs">
+                    <p x-text="t.actual_start_date || '—'" :class="t.actual_start_date ? '' : 'text-slate-400'"></p>
+                    <p x-text="t.actual_end_date || '—'" :class="t.actual_end_date ? 'text-slate-500' : 'text-slate-400'"></p>
+                  </td>
+                  <td class="px-3 py-2.5 text-xs text-right" x-text="t.planned_effort.toFixed(1)"></td>
+                  <td class="px-3 py-2.5 text-xs text-right">
+                    <span x-text="t.actual_effort.toFixed(1)"
+                          :class="t.effort_variance_pct > 20 ? 'text-red-700 font-semibold' : (t.effort_variance_pct < -20 ? 'text-emerald-700 font-semibold' : '')"></span>
+                    <span class="text-[10px] text-slate-400 block" x-show="t.planned_effort > 0" x-text="(t.effort_variance_pct > 0 ? '+' : '') + t.effort_variance_pct + '%'"></span>
+                  </td>
+                  <td class="px-3 py-2.5 text-center">
+                    <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] uppercase font-semibold"
+                          :class="{
+                            'bg-emerald-100 text-emerald-700': t.status === 'completed',
+                            'bg-amber-100 text-amber-700':     t.status === 'in_progress',
+                            'bg-slate-100 text-slate-600':     t.status === 'not_started',
+                            'bg-blue-100 text-blue-700':       t.status === 'on_hold',
+                          }" x-text="t.status.replace('_', ' ')"></span>
+                    <span x-show="t.days_delayed > 0" class="text-[10px] text-red-600 block mt-1" x-text="t.days_delayed + 'd late'"></span>
+                  </td>
+                  <td class="px-3 py-2.5 text-right whitespace-nowrap">
+                    <button @click="openEditTask(t)" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-brand-700 bg-brand-50 hover:bg-brand-100">
+                      <i data-lucide="pencil" class="w-3 h-3"></i>
+                      <span x-text="IS_ADMIN ? 'Edit' : 'Update'"></span>
+                    </button>
+                    {% if user.role == 'admin' %}
+                    <button @click="confirmDeleteTask(t)" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-red-700 bg-red-50 hover:bg-red-100 ml-1">
+                      <i data-lucide="trash-2" class="w-3 h-3"></i>
+                    </button>
+                    {% endif %}
+                  </td>
+                </tr>
+              </template>
+              <template x-if="!project.tasks || project.tasks.length === 0">
+                <tr>
+                  <td colspan="10" class="px-4 py-12 text-center text-slate-400">
+                    <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+                    <p>No tasks in this project yet.</p>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============ ADD / EDIT TASK MODAL ============ -->
+      <div x-show="taskModalOpen" x-cloak
+           class="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto"
+           @keydown.escape.window="taskModalOpen = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8" @click.outside="taskModalOpen = false">
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl">
+            <h3 class="font-semibold text-lg" x-text="editingTaskId ? (IS_ADMIN ? 'Edit task' : 'Update actuals') : 'New task'"></h3>
+            <button @click="taskModalOpen = false" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+          </div>
+
+          <form @submit.prevent="saveTask()" class="p-5">
+            <!-- For employees: clear notice about what they can edit -->
+            <template x-if="editingTaskId && !IS_ADMIN">
+              <div class="p-3 mb-4 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-700 flex gap-2">
+                <i data-lucide="info" class="w-4 h-4 shrink-0 mt-0.5"></i>
+                <span>You can only update <b>Actual dates</b>, <b>Actual effort</b>, <b>Status</b>, and <b>Remarks</b>. Other fields are managed by the project manager.</span>
+              </div>
+            </template>
+
+            <div class="grid grid-cols-2 gap-3">
+              <!-- Phase -->
+              <div>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Milestone phase</label>
+                <input x-model="taskForm.milestone_phase" type="text" placeholder="e.g. Phase 1, Design"
+                       :disabled="editingTaskId && !IS_ADMIN"
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 disabled:text-slate-500">
+              </div>
+              <!-- Category -->
+              <div>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Category</label>
+                <input x-model="taskForm.category" type="text" placeholder="e.g. Development, Testing"
+                       :disabled="editingTaskId && !IS_ADMIN"
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 disabled:text-slate-500">
+              </div>
+              <!-- Task description -->
+              <div class="col-span-2">
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Task description *</label>
+                <textarea x-model="taskForm.task_description" required rows="2"
+                          :disabled="editingTaskId && !IS_ADMIN"
+                          class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 disabled:text-slate-500"></textarea>
+              </div>
+              <!-- Action item -->
+              <div class="col-span-2">
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Action item</label>
+                <input x-model="taskForm.action_item" type="text" placeholder="The CMMI-tracked action"
+                       :disabled="editingTaskId && !IS_ADMIN"
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 disabled:text-slate-500">
+              </div>
+
+              <!-- Planned dates -->
+              <div>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Planned start</label>
+                <input x-model="taskForm.planned_start_date" type="date"
+                       :disabled="editingTaskId && !IS_ADMIN"
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 disabled:text-slate-500">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Planned end</label>
+                <input x-model="taskForm.planned_end_date" type="date"
+                       :disabled="editingTaskId && !IS_ADMIN"
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 disabled:text-slate-500">
+              </div>
+
+              <!-- Actual dates - editable by both -->
+              <div>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 mb-1">Actual start</label>
+                <input x-model="taskForm.actual_start_date" type="date"
+                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 focus:border-emerald-500 outline-none text-sm">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 mb-1">Actual end</label>
+                <input x-model="taskForm.actual_end_date" type="date"
+                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 focus:border-emerald-500 outline-none text-sm">
+              </div>
+
+              <!-- Effort -->
+              <div>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Planned effort (hours)</label>
+                <input x-model.number="taskForm.planned_effort" type="number" step="0.5" min="0"
+                       :disabled="editingTaskId && !IS_ADMIN"
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 disabled:text-slate-500">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 mb-1">Actual effort (hours)</label>
+                <input x-model.number="taskForm.actual_effort" type="number" step="0.5" min="0"
+                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 focus:border-emerald-500 outline-none text-sm">
+              </div>
+
+              <!-- Status -->
+              <div>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 mb-1">Status</label>
+                <select x-model="taskForm.status"
+                        class="w-full px-3 py-2 rounded-lg border border-emerald-200 focus:border-emerald-500 outline-none text-sm bg-white">
+                  <option value="not_started">Not started</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="on_hold">On hold</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+
+              <!-- Assignees (admin only) -->
+              <div x-show="IS_ADMIN">
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Assigned to</label>
+                <select x-model="taskForm.assignee_ids" multiple size="3"
+                        class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm bg-white">
+                  <template x-for="u in allUsers" :key="u.id">
+                    <option :value="u.id" x-text="u.full_name"></option>
+                  </template>
+                </select>
+                <p class="text-[10px] text-slate-400 mt-1">Hold Ctrl/Cmd to select multiple</p>
+              </div>
+
+              <!-- Remarks -->
+              <div class="col-span-2">
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 mb-1">Remarks</label>
+                <textarea x-model="taskForm.remarks" rows="2"
+                          class="w-full px-3 py-2 rounded-lg border border-emerald-200 focus:border-emerald-500 outline-none text-sm"></textarea>
+              </div>
+            </div>
+
+            <div x-show="taskError" class="mt-3 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700" x-text="taskError"></div>
+
+            <div class="flex justify-end gap-2 pt-4 mt-4 border-t border-slate-100">
+              <button type="button" @click="taskModalOpen = false" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100">Cancel</button>
+              <button type="submit" :disabled="savingTask"
+                      class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-brand-500 to-accent-500 hover:opacity-95 disabled:opacity-60">
+                <span x-text="savingTask ? 'Saving...' : 'Save'"></span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {% if user.role == 'admin' %}
+      <!-- Delete task confirmation -->
+      <div x-show="deleteTaskTarget" x-cloak
+           class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+           @keydown.escape.window="deleteTaskTarget = null">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm" @click.outside="deleteTaskTarget = null">
+          <div class="p-6 text-center">
+            <div class="w-14 h-14 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-3">
+              <i data-lucide="alert-triangle" class="w-7 h-7 text-red-600"></i>
+            </div>
+            <h3 class="font-bold text-lg text-slate-900 mb-1">Delete this task?</h3>
+            <p class="text-sm text-slate-500 mb-5" x-text="deleteTaskTarget?.task_description"></p>
+            <div class="flex gap-2 justify-center">
+              <button @click="deleteTaskTarget = null" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200">Cancel</button>
+              <button @click="doDeleteTask()" :disabled="deletingTask" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700">
+                <span x-text="deletingTask ? 'Deleting...' : 'Delete'"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Toast -->
+      <div x-show="toast.msg" x-cloak x-transition
+           class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2"
+           :class="toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'">
+        <i :data-lucide="toast.type === 'success' ? 'check-circle' : 'alert-circle'" class="w-4 h-4"></i>
+        <span x-text="toast.msg"></span>
+      </div>
+
+    </div>
+  </template>
+
+  <template x-if="!project && !loadError">
+    <div class="text-center py-16 text-slate-400">Loading...</div>
+  </template>
+  <template x-if="loadError">
+    <div class="text-center py-16">
+      <p class="text-red-600 font-semibold mb-2">Cannot load project</p>
+      <p class="text-sm text-slate-500" x-text="loadError"></p>
+    </div>
+  </template>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const IS_ADMIN = {{ 'true' if user.role == 'admin' else 'false' }};
+
+  function projectDetailApp(projectId) {
+    return {
+      projectId,
+      project: null,
+      loadError: '',
+      allUsers: [],
+      taskModalOpen: false,
+      editingTaskId: null,
+      taskForm: {},
+      savingTask: false,
+      taskError: '',
+      deleteTaskTarget: null,
+      deletingTask: false,
+      toast: { msg: '', type: 'success' },
+
+      completedCount()  { return this.project?.tasks?.filter(t => t.status === 'completed').length || 0; },
+      inProgressCount() { return this.project?.tasks?.filter(t => t.status === 'in_progress').length || 0; },
+      delayedCount()    { return this.project?.tasks?.filter(t => t.days_delayed > 0).length || 0; },
+
+      async load() {
+        try {
+          const r = await fetch(`/api/projects/${this.projectId}`);
+          if (!r.ok) {
+            const e = await r.json();
+            throw new Error(e.detail || 'Cannot load');
+          }
+          this.project = await r.json();
+
+          if (IS_ADMIN) {
+            const ur = await fetch('/api/users');
+            if (ur.ok) this.allUsers = await ur.json();
+          }
+          this.$nextTick(() => lucide.createIcons());
+        } catch (e) {
+          this.loadError = e.message;
+        }
+      },
+
+      openAddTask() {
+        this.editingTaskId = null;
+        this.taskForm = {
+          milestone_phase: '', category: '', task_description: '',
+          planned_start_date: '', planned_end_date: '',
+          actual_start_date: '', actual_end_date: '',
+          planned_effort: 0, actual_effort: 0,
+          action_item: '', remarks: '', status: 'not_started',
+          assignee_ids: [],
+        };
+        this.taskError = '';
+        this.taskModalOpen = true;
+        this.$nextTick(() => lucide.createIcons());
+      },
+
+      openEditTask(t) {
+        this.editingTaskId = t.id;
+        this.taskForm = {
+          milestone_phase: t.milestone_phase || '',
+          category: t.category || '',
+          task_description: t.task_description || '',
+          planned_start_date: t.planned_start_date || '',
+          planned_end_date:   t.planned_end_date   || '',
+          actual_start_date:  t.actual_start_date  || '',
+          actual_end_date:    t.actual_end_date    || '',
+          planned_effort: t.planned_effort || 0,
+          actual_effort:  t.actual_effort  || 0,
+          action_item: t.action_item || '',
+          remarks:     t.remarks || '',
+          status:      t.status,
+          assignee_ids: t.assignees.map(a => a.id),
+        };
+        this.taskError = '';
+        this.taskModalOpen = true;
+        this.$nextTick(() => lucide.createIcons());
+      },
+
+      async saveTask() {
+        this.savingTask = true;
+        this.taskError = '';
+        try {
+          const url    = this.editingTaskId ? `/api/projects/tasks/${this.editingTaskId}` : `/api/projects/${this.projectId}/tasks`;
+          const method = this.editingTaskId ? 'PATCH' : 'POST';
+
+          // Clean up empty dates -> null
+          const body = { ...this.taskForm };
+          ['planned_start_date','planned_end_date','actual_start_date','actual_end_date'].forEach(k => {
+            if (!body[k]) body[k] = null;
+          });
+
+          // Coerce assignee IDs to ints
+          if (Array.isArray(body.assignee_ids)) {
+            body.assignee_ids = body.assignee_ids.map(Number).filter(n => !isNaN(n));
+          }
+
+          const r = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Save failed'); }
+          this.taskModalOpen = false;
+          await this.load();
+          this.showToast(this.editingTaskId ? 'Task updated' : 'Task created');
+        } catch (e) { this.taskError = e.message; }
+        finally    { this.savingTask = false; }
+      },
+
+      confirmDeleteTask(t) {
+        this.deleteTaskTarget = t;
+        this.$nextTick(() => lucide.createIcons());
+      },
+
+      async doDeleteTask() {
+        if (!this.deleteTaskTarget) return;
+        this.deletingTask = true;
+        try {
+          const r = await fetch(`/api/projects/tasks/${this.deleteTaskTarget.id}`, { method: 'DELETE' });
+          if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Delete failed'); }
+          this.deleteTaskTarget = null;
+          await this.load();
+          this.showToast('Task deleted');
+        } catch (e) { this.showToast(e.message, 'error'); }
+        finally    { this.deletingTask = false; }
+      },
+
+      showToast(msg, type = 'success') {
+        this.toast = { msg, type };
+        this.$nextTick(() => lucide.createIcons());
+        setTimeout(() => { this.toast.msg = ''; }, 3000);
+      },
+    };
+  }
+</script>
+{% endblock %}

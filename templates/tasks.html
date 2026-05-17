@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Tasks | Timesheet AI{% endblock %}
+
+{% block content %}
+<div class="p-6 lg:p-8 max-w-7xl mx-auto" x-data="tasksApp()" x-init="load()">
+
+  <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Tasks</h1>
+      <p class="text-sm text-slate-500 mt-0.5">Manage and track all work items</p>
+    </div>
+    <div class="flex gap-2">
+      <select x-model="statusFilter" @change="load()"
+              class="px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white">
+        <option value="">All statuses</option>
+        <option value="pending">Pending</option>
+        <option value="in_progress">In progress</option>
+        <option value="completed">Completed</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+        <tr>
+          <th class="px-4 py-3 text-left">Task</th>
+          <th class="px-4 py-3 text-left">Sub-task</th>
+          <th class="px-4 py-3 text-left">Priority</th>
+          <th class="px-4 py-3 text-left">Status</th>
+          <th class="px-4 py-3 text-left">Deadline</th>
+          <th class="px-4 py-3 text-left">AI risk</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        <template x-for="t in tasks" :key="t.id">
+          <tr class="hover:bg-slate-50">
+            <td class="px-4 py-3 font-medium" x-text="t.task"></td>
+            <td class="px-4 py-3 text-slate-600" x-text="t.sub_task"></td>
+            <td class="px-4 py-3">
+              <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
+                    :class="{
+                      'bg-red-100 text-red-700':    t.priority === 'urgent',
+                      'bg-orange-100 text-orange-700': t.priority === 'high',
+                      'bg-blue-100 text-blue-700':  t.priority === 'medium',
+                      'bg-slate-100 text-slate-600':t.priority === 'low',
+                    }" x-text="t.priority"></span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
+                    :class="{
+                      'bg-emerald-100 text-emerald-700': t.status === 'completed',
+                      'bg-amber-100 text-amber-700':     t.status === 'in_progress',
+                      'bg-rose-100 text-rose-700':       t.status === 'pending',
+                    }" x-text="t.status.replace('_', ' ')"></span>
+            </td>
+            <td class="px-4 py-3 text-slate-600" x-text="t.deadline ? new Date(t.deadline).toLocaleDateString() : '—'"></td>
+            <td class="px-4 py-3">
+              <button @click="checkRisk(t.id)" class="text-brand-600 hover:underline text-xs font-medium">Check risk</button>
+              <span x-show="risks[t.id]"
+                    :class="{
+                      'bg-red-100 text-red-700':   risks[t.id]?.risk === 'high',
+                      'bg-amber-100 text-amber-700': risks[t.id]?.risk === 'medium',
+                      'bg-emerald-100 text-emerald-700': risks[t.id]?.risk === 'low',
+                    }"
+                    class="ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
+                    x-text="risks[t.id]?.risk"></span>
+              <p x-show="risks[t.id]" class="text-xs text-slate-500 mt-1" x-text="risks[t.id]?.reason"></p>
+            </td>
+          </tr>
+        </template>
+        <template x-if="tasks.length === 0">
+          <tr><td colspan="6" class="px-4 py-8 text-center text-slate-400">No tasks yet.</td></tr>
+        </template>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function tasksApp() {
+  return {
+    tasks: [],
+    risks: {},
+    statusFilter: new URLSearchParams(location.search).get('status') || '',
+
+    async load() {
+      const url = '/api/tasks' + (this.statusFilter ? '?status=' + this.statusFilter : '');
+      const r = await fetch(url);
+      this.tasks = await r.json();
+    },
+
+    async checkRisk(id) {
+      const r = await fetch('/api/ai/deadline-risk/' + id);
+      this.risks[id] = await r.json();
+    },
+  };
+}
+</script>
+{% endblock %}

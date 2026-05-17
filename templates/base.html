@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Timesheet AI{% endblock %}</title>
+
+  <!-- Tailwind via CDN — zero build step -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Alpine.js for lightweight interactivity -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <!-- Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/static/css/style.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            brand: { 500: '#667eea', 600: '#5a67d8', 700: '#4c51bf' },
+            accent: { 500: '#764ba2' },
+          },
+        },
+      },
+    }
+  </script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+
+{% if user %}
+<div class="flex min-h-screen">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
+    <div class="px-6 py-5 border-b border-slate-100">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center">
+          <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <p class="font-bold text-slate-900 leading-tight">Timesheet AI</p>
+          <p class="text-xs text-slate-500">Project planning</p>
+        </div>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <a href="/" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 {% if request.url.path == '/' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white hover:from-brand-600{% endif %}">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+      </a>
+      <a href="/projects" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 {% if request.url.path.startswith('/projects') %}bg-gradient-to-r from-brand-500 to-accent-500 text-white{% endif %}">
+        <i data-lucide="folder-kanban" class="w-4 h-4"></i> Projects
+      </a>
+      <a href="/tasks" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 {% if request.url.path == '/tasks' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white{% endif %}">
+        <i data-lucide="check-square" class="w-4 h-4"></i> Tasks
+      </a>
+      <a href="/reports" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 {% if request.url.path == '/reports' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white{% endif %}">
+        <i data-lucide="file-bar-chart" class="w-4 h-4"></i> CMMI Reports
+      </a>
+      {% if user.role == 'admin' %}
+      <a href="/admin/users" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 {% if request.url.path == '/admin/users' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white{% endif %}">
+        <i data-lucide="users" class="w-4 h-4"></i> Users
+        <span class="ml-auto text-[10px] uppercase font-semibold {% if request.url.path == '/admin/users' %}text-white/80{% else %}text-slate-400{% endif %}">Admin</span>
+      </a>
+      {% endif %}
+    </nav>
+
+    <div class="px-3 py-4 border-t border-slate-100">
+      <div class="flex items-center gap-3 px-2 py-2">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white font-semibold text-sm">
+          {{ user.full_name[0]|upper }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-slate-900 truncate">{{ user.full_name }}</p>
+          <p class="text-xs text-slate-500 capitalize">{{ user.role }}</p>
+        </div>
+        <a href="/logout" title="Logout" class="text-slate-400 hover:text-slate-700">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main area -->
+  <main class="flex-1 overflow-x-hidden">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% else %}
+  {% block fullpage %}{% endblock %}
+{% endif %}
+
+<script>
+  // Initialize icons after Lucide loads + after Alpine updates DOM
+  document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+  document.addEventListener('alpine:initialized', () => lucide.createIcons());
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

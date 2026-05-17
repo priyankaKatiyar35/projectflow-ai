@@ -1,0 +1,527 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | Timesheet AI{% endblock %}
+
+{% block content %}
+<div class="p-6 lg:p-8 max-w-7xl mx-auto" x-data="dashboardApp()">
+
+  <!-- Page header -->
+  <div class="flex items-start justify-between mb-6 flex-wrap gap-3">
+    <div>
+      <p class="text-sm text-slate-500">Welcome back, <span class="font-medium text-slate-700">{{ user.full_name.split()[0] }}</span></p>
+      <h1 class="text-2xl font-bold text-slate-900 mt-0.5">
+        {% if is_admin %}Admin overview{% else %}My dashboard{% endif %}
+      </h1>
+    </div>
+    <div class="flex gap-2 items-center flex-wrap">
+      <button @click="openChat = true"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-medium shadow-lg shadow-brand-500/30 hover:opacity-95">
+        <i data-lucide="message-circle" class="w-4 h-4"></i> Ask AI
+      </button>
+      <button @click="openTaskParser = true"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 text-sm font-medium hover:bg-slate-50">
+        <i data-lucide="plus" class="w-4 h-4"></i> Natural task
+      </button>
+      <button @click="generateReport('{% if is_admin %}weekly_summary{% else %}daily_standup{% endif %}')"
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 text-sm font-medium hover:bg-slate-50">
+        <i data-lucide="file-text" class="w-4 h-4"></i> Auto report
+      </button>
+    </div>
+  </div>
+
+  <!-- AI insights banner -->
+  {% if ai_insights %}
+  <div class="rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 p-6 mb-6 text-white shadow-xl shadow-brand-500/20 relative overflow-hidden">
+    <div class="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-white/10 pointer-events-none"></div>
+    <div class="relative">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+          <i data-lucide="sparkles" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="font-semibold text-base">AI insights</h3>
+          <p class="text-xs text-white/80">Live observations from your data</p>
+        </div>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-3">
+        {% for ins in ai_insights %}
+        <div class="bg-white/15 backdrop-blur border border-white/20 rounded-xl px-4 py-3 flex gap-3">
+          <i data-lucide="{% if ins.type == 'success' %}check-circle{% elif ins.type == 'danger' %}alert-triangle{% elif ins.type == 'warning' %}alert-circle{% else %}info{% endif %}"
+             class="w-5 h-5 shrink-0 mt-0.5
+             {% if ins.type == 'success' %}text-emerald-200
+             {% elif ins.type == 'danger' %}text-red-200
+             {% elif ins.type == 'warning' %}text-amber-200
+             {% else %}text-blue-200{% endif %}"></i>
+          <div>
+            <p class="font-medium text-sm">{{ ins.title }}</p>
+            <p class="text-xs text-white/85 mt-0.5 leading-relaxed">{{ ins.body }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Stat cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    {% if is_admin %}
+    <a href="#" class="group bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+      <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-3">
+        <i data-lucide="users" class="w-5 h-5 text-white"></i>
+      </div>
+      <p class="text-xs uppercase tracking-wide text-slate-500 font-medium">Employees</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1">{{ stats.users }}</p>
+    </a>
+    {% endif %}
+
+    <a href="/tasks" class="group bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+      <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mb-3">
+        <i data-lucide="check-square" class="w-5 h-5 text-white"></i>
+      </div>
+      <p class="text-xs uppercase tracking-wide text-slate-500 font-medium">{% if is_admin %}Total tasks{% else %}My tasks{% endif %}</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1">{{ stats.total_tasks }}</p>
+    </a>
+
+    <a href="/tasks?status=pending" class="group bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+      <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center mb-3">
+        <i data-lucide="hourglass" class="w-5 h-5 text-white"></i>
+      </div>
+      <p class="text-xs uppercase tracking-wide text-slate-500 font-medium">Pending</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1">{{ stats.pending }}</p>
+    </a>
+
+    <a href="/tasks?status=in_progress" class="group bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+      <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mb-3">
+        <i data-lucide="loader" class="w-5 h-5 text-white"></i>
+      </div>
+      <p class="text-xs uppercase tracking-wide text-slate-500 font-medium">In progress</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1">{{ stats.in_progress }}</p>
+    </a>
+
+    <a href="/tasks?status=completed" class="group bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+      <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center mb-3">
+        <i data-lucide="check-circle-2" class="w-5 h-5 text-white"></i>
+      </div>
+      <p class="text-xs uppercase tracking-wide text-slate-500 font-medium">Completed</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1">{{ stats.completed }}</p>
+    </a>
+
+    <a href="/tasks?overdue=1" class="group bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+      <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center mb-3">
+        <i data-lucide="alert-triangle" class="w-5 h-5 text-white"></i>
+      </div>
+      <p class="text-xs uppercase tracking-wide text-slate-500 font-medium">Overdue</p>
+      <p class="text-2xl font-bold text-red-600 mt-1">{{ stats.overdue }}</p>
+    </a>
+
+    {% if is_admin %}
+    <a href="/tasks?due=today" class="group bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+      <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 flex items-center justify-center mb-3">
+        <i data-lucide="calendar-clock" class="w-5 h-5 text-white"></i>
+      </div>
+      <p class="text-xs uppercase tracking-wide text-slate-500 font-medium">Due today</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1">{{ stats.due_today }}</p>
+    </a>
+
+    <a href="/tasks?no_deadline=1" class="group bg-white rounded-2xl p-5 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all">
+      <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center mb-3">
+        <i data-lucide="calendar-x" class="w-5 h-5 text-white"></i>
+      </div>
+      <p class="text-xs uppercase tracking-wide text-slate-500 font-medium">No deadline</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1">{{ stats.no_deadline }}</p>
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Charts row 1 -->
+  <div class="grid lg:grid-cols-3 gap-5 mb-6">
+    <!-- Productivity trend -->
+    <div class="lg:col-span-2 bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 class="font-semibold text-slate-900 flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-4 h-4 text-brand-500"></i>
+            Productivity trend
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5">Hours logged over the last 14 days</p>
+        </div>
+      </div>
+      <div class="relative h-64">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Status breakdown -->
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+      <h3 class="font-semibold text-slate-900 flex items-center gap-2 mb-4">
+        <i data-lucide="pie-chart" class="w-4 h-4 text-brand-500"></i>
+        Status breakdown
+      </h3>
+      <div class="space-y-4">
+        {% set total = stats.pending + stats.in_progress + stats.completed %}
+        {% set pct_done = (stats.completed * 100 // total) if total > 0 else 0 %}
+        {% set pct_prog = (stats.in_progress * 100 // total) if total > 0 else 0 %}
+        {% set pct_pend = (stats.pending * 100 // total) if total > 0 else 0 %}
+        <div>
+          <div class="flex justify-between text-xs mb-1.5"><span class="text-slate-600">Completed</span><span class="font-medium">{{ pct_done }}%</span></div>
+          <div class="h-2 bg-slate-100 rounded-full"><div class="h-full bg-emerald-500 rounded-full" style="width: {{ pct_done }}%"></div></div>
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1.5"><span class="text-slate-600">In progress</span><span class="font-medium">{{ pct_prog }}%</span></div>
+          <div class="h-2 bg-slate-100 rounded-full"><div class="h-full bg-amber-500 rounded-full" style="width: {{ pct_prog }}%"></div></div>
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1.5"><span class="text-slate-600">Pending</span><span class="font-medium">{{ pct_pend }}%</span></div>
+          <div class="h-2 bg-slate-100 rounded-full"><div class="h-full bg-rose-500 rounded-full" style="width: {{ pct_pend }}%"></div></div>
+        </div>
+      </div>
+
+      <button @click="loadBurnout()"
+              class="mt-5 w-full py-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-xs font-medium text-slate-700 flex items-center justify-center gap-1.5">
+        <i data-lucide="zap" class="w-3.5 h-3.5"></i> Scan for burnout risks
+      </button>
+    </div>
+  </div>
+
+  <!-- Charts row 2 -->
+  <div class="grid lg:grid-cols-2 gap-5 mb-6">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+      <h3 class="font-semibold text-slate-900 flex items-center gap-2 mb-3">
+        <i data-lucide="bar-chart-3" class="w-4 h-4 text-brand-500"></i>
+        Effort by category
+      </h3>
+      <div class="relative h-64"><canvas id="categoryChart"></canvas></div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+      <h3 class="font-semibold text-slate-900 flex items-center gap-2 mb-3">
+        <i data-lucide="bar-chart-2" class="w-4 h-4 text-brand-500"></i>
+        Effort by sub-task
+      </h3>
+      <div class="relative h-64"><canvas id="subtaskChart"></canvas></div>
+    </div>
+  </div>
+
+  {% if is_admin %}
+  <!-- Admin-only charts -->
+  <div class="grid lg:grid-cols-2 gap-5 mb-6">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+      <h3 class="font-semibold text-slate-900 flex items-center gap-2 mb-3">
+        <i data-lucide="users-2" class="w-4 h-4 text-brand-500"></i>
+        Employee progress
+      </h3>
+      <div class="relative h-72"><canvas id="progressChart"></canvas></div>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+      <h3 class="font-semibold text-slate-900 flex items-center gap-2 mb-3">
+        <i data-lucide="clock" class="w-4 h-4 text-brand-500"></i>
+        Total effort per person
+      </h3>
+      <div class="relative h-72"><canvas id="activityChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Online presence -->
+  <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-6">
+    <h3 class="font-semibold text-slate-900 flex items-center gap-2 mb-4">
+      <i data-lucide="circle-dot" class="w-4 h-4 text-brand-500"></i>
+      Team activity
+    </h3>
+    <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+      {% for name, last in online_presence.items() %}
+      <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white font-medium text-sm">
+          {{ name[0]|upper }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-slate-800 truncate">{{ name }}</p>
+          <p class="text-xs text-slate-500">{{ last }}</p>
+        </div>
+        <span class="w-2 h-2 rounded-full {% if 'Just now' in last or 'minutes' in last %}bg-emerald-500{% else %}bg-slate-300{% endif %}"></span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ============ AI MODAL: Chat ============ -->
+  <div x-show="openChat" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+       @keydown.escape.window="openChat = false">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col" @click.outside="openChat = false">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center">
+            <i data-lucide="sparkles" class="w-4 h-4 text-white"></i>
+          </div>
+          <h3 class="font-semibold">Ask AI about your data</h3>
+        </div>
+        <button @click="openChat = false" class="text-slate-400 hover:text-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-5 space-y-3" id="chatLog">
+        <template x-for="(msg, i) in chatMessages" :key="i">
+          <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+            <div :class="msg.role === 'user'
+                        ? 'bg-gradient-to-br from-brand-500 to-accent-500 text-white max-w-md px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm'
+                        : 'bg-slate-100 text-slate-800 max-w-md px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm'">
+              <p x-text="msg.text" class="whitespace-pre-wrap"></p>
+            </div>
+          </div>
+        </template>
+        <template x-if="chatMessages.length === 0">
+          <div class="text-center text-slate-400 text-sm py-8">
+            <p class="mb-2">Try asking:</p>
+            <div class="space-y-1.5">
+              <button @click="chatInput='Who is overloaded this week?'; sendChat()" class="block mx-auto text-brand-600 hover:underline">"Who is overloaded this week?"</button>
+              <button @click="chatInput='Summarize my team\'s progress'; sendChat()" class="block mx-auto text-brand-600 hover:underline">"Summarize my team's progress"</button>
+              <button @click="chatInput='Which tasks are most at risk?'; sendChat()" class="block mx-auto text-brand-600 hover:underline">"Which tasks are most at risk?"</button>
+            </div>
+          </div>
+        </template>
+        <div x-show="chatThinking" class="flex justify-start">
+          <div class="bg-slate-100 px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm text-slate-500">Thinking...</div>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-100 p-4">
+        <form @submit.prevent="sendChat()" class="flex gap-2">
+          <input x-model="chatInput" type="text" placeholder="Ask anything about your tasks, team, or progress..."
+                 class="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm">
+          <button type="submit"
+                  class="px-4 py-2.5 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white font-medium text-sm">
+            Send
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ AI MODAL: Natural task entry ============ -->
+  <div x-show="openTaskParser" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+       @keydown.escape.window="openTaskParser = false">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl" @click.outside="openTaskParser = false">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-semibold">Create task with natural language</h3>
+        <button @click="openTaskParser = false" class="text-slate-400 hover:text-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-5">
+        <p class="text-xs text-slate-500 mb-2">Describe the task in your own words — AI will fill the fields.</p>
+        <textarea x-model="nlText" rows="2" placeholder="e.g. Design login page for Priya by Friday, high priority, ~6 hours"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm"></textarea>
+        <button @click="parseTask()"
+                class="mt-3 w-full py-2.5 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white font-medium text-sm">
+          Parse
+        </button>
+
+        <template x-if="parsedTask">
+          <div class="mt-4 p-4 rounded-lg bg-slate-50 border border-slate-200 text-sm space-y-1.5">
+            <p><span class="text-slate-500">Category:</span> <b x-text="parsedTask.task"></b></p>
+            <p><span class="text-slate-500">Sub-task:</span> <b x-text="parsedTask.sub_task"></b></p>
+            <p><span class="text-slate-500">Assignee:</span> <b x-text="parsedTask.assignee_name || '(unassigned)'"></b></p>
+            <p><span class="text-slate-500">Priority:</span> <b x-text="parsedTask.priority"></b></p>
+            <p><span class="text-slate-500">Estimated:</span> <b x-text="parsedTask.estimated_hours + 'h'"></b></p>
+            <p><span class="text-slate-500">Deadline:</span> <b x-text="parsedTask.deadline ? new Date(parsedTask.deadline).toLocaleDateString() : 'none'"></b></p>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ AI MODAL: Report viewer ============ -->
+  <div x-show="openReport" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+       @keydown.escape.window="openReport = false">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col" @click.outside="openReport = false">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-semibold">AI-generated report</h3>
+        <button @click="openReport = false" class="text-slate-400 hover:text-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-5 overflow-y-auto">
+        <div x-show="reportLoading" class="text-center text-slate-400 py-6">Generating report...</div>
+        <pre x-show="!reportLoading" x-text="reportText" class="text-sm text-slate-700 whitespace-pre-wrap font-sans"></pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // ============ Data injected from FastAPI ============
+  const TREND = {{ trend | tojson }};
+  const CATEGORY = {{ effort_by_category | tojson }};
+  const SUBTASK = {{ effort_by_subtask | tojson }};
+  const EMP_PROGRESS = {{ employee_progress | tojson }};
+  const EMP_ACTIVITY = {{ employee_activity | tojson }};
+
+  // ============ Charts ============
+  const baseColors = ['#667eea','#764ba2','#ec4899','#f59e0b','#10b981','#3b82f6','#14b8a6'];
+
+  // Productivity trend (line)
+  new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels: TREND.labels,
+      datasets: [{
+        label: 'Hours',
+        data: TREND.values,
+        borderColor: '#667eea',
+        backgroundColor: 'rgba(102, 126, 234, 0.15)',
+        fill: true,
+        tension: 0.35,
+        pointRadius: 3,
+        pointBackgroundColor: '#667eea',
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { font: { size: 11 } } }, x: { ticks: { font: { size: 10 } } } },
+    },
+  });
+
+  // Effort by category (donut)
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(CATEGORY),
+      datasets: [{ data: Object.values(CATEGORY), backgroundColor: baseColors, borderWidth: 0 }],
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 11 } } } } },
+  });
+
+  // Effort by sub-task (horizontal bar)
+  new Chart(document.getElementById('subtaskChart'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(SUBTASK),
+      datasets: [{ label: 'Hours', data: Object.values(SUBTASK), backgroundColor: '#764ba2', borderRadius: 6 }],
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true } },
+    },
+  });
+
+  {% if is_admin %}
+  // Employee progress (stacked)
+  const empNames = Object.keys(EMP_PROGRESS);
+  new Chart(document.getElementById('progressChart'), {
+    type: 'bar',
+    data: {
+      labels: empNames,
+      datasets: [
+        { label: 'Pending', data: empNames.map(n => EMP_PROGRESS[n].Pending), backgroundColor: '#f43f5e' },
+        { label: 'In Progress', data: empNames.map(n => EMP_PROGRESS[n]['In Progress']), backgroundColor: '#f59e0b' },
+        { label: 'Completed', data: empNames.map(n => EMP_PROGRESS[n].Completed), backgroundColor: '#10b981' },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
+    },
+  });
+
+  // Employee activity (bar)
+  new Chart(document.getElementById('activityChart'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(EMP_ACTIVITY),
+      datasets: [{ label: 'Hours logged', data: Object.values(EMP_ACTIVITY), backgroundColor: '#667eea', borderRadius: 6 }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } },
+    },
+  });
+  {% endif %}
+
+  // ============ Alpine app state + AI calls ============
+  function dashboardApp() {
+    return {
+      openChat: false,
+      openTaskParser: false,
+      openReport: false,
+      chatMessages: [],
+      chatInput: '',
+      chatThinking: false,
+      nlText: '',
+      parsedTask: null,
+      reportText: '',
+      reportLoading: false,
+
+      async sendChat() {
+        const msg = this.chatInput.trim();
+        if (!msg) return;
+        this.chatMessages.push({ role: 'user', text: msg });
+        this.chatInput = '';
+        this.chatThinking = true;
+        try {
+          const r = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg }),
+          });
+          const data = await r.json();
+          this.chatMessages.push({ role: 'ai', text: data.reply });
+        } catch (e) {
+          this.chatMessages.push({ role: 'ai', text: 'Sorry, something went wrong.' });
+        } finally {
+          this.chatThinking = false;
+          this.$nextTick(() => {
+            const log = document.getElementById('chatLog');
+            log.scrollTop = log.scrollHeight;
+          });
+        }
+      },
+
+      async parseTask() {
+        if (!this.nlText.trim()) return;
+        const r = await fetch('/api/ai/parse-task', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: this.nlText }),
+        });
+        this.parsedTask = await r.json();
+      },
+
+      async generateReport(scope) {
+        this.openReport = true;
+        this.reportLoading = true;
+        this.reportText = '';
+        try {
+          const r = await fetch('/api/ai/report/' + scope, { method: 'POST' });
+          const data = await r.json();
+          this.reportText = data.report;
+        } catch (e) {
+          this.reportText = 'Report generation failed.';
+        } finally {
+          this.reportLoading = false;
+        }
+      },
+
+      async loadBurnout() {
+        const r = await fetch('/api/ai/burnout');
+        const data = await r.json();
+        if (data.insights && data.insights.length) {
+          alert(data.insights.map(i => '• ' + i.title + ': ' + i.body).join('\n\n'));
+        } else {
+          alert('No burnout signals detected — team looks healthy.');
+        }
+      },
+    };
+  }
+</script>
+{% endblock %}
