@@ -12,7 +12,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import settings
 from app.database import engine, Base
-from app.routes import auth, pages, tasks, efforts, ai, users, projects, reports
+from app.routes import auth, pages, tasks, efforts, ai, users, initial_setup
 
 # Create tables on first run (safe / idempotent)
 Base.metadata.create_all(bind=engine)
@@ -31,7 +31,7 @@ app.include_router(auth.router)
 app.include_router(tasks.router)
 app.include_router(efforts.router)
 app.include_router(ai.router)
-app.include_router(users.router)
+app.include_router(initial_setup.router)
 app.include_router(projects.router)
 app.include_router(reports.router)
 
