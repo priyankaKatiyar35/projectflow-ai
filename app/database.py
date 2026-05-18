@@ -14,7 +14,7 @@ from app.config import settings
 os.makedirs("data", exist_ok=True)
 
 
-engine = create_engine(
+engine = create_engine( 
     settings.database_url,
     connect_args={"check_same_thread": False} if "sqlite" in settings.database_url else {},
 )
