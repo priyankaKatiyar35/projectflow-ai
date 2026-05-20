@@ -12,7 +12,11 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import settings
 from app.database import engine, Base
+<<<<<<< HEAD
 from app.routes import auth, pages, tasks, efforts, ai, users, projects, reports, notifications
+=======
+from app.routes import auth, pages, tasks, efforts, ai, users, initial_setup, projects, reports
+>>>>>>> 0fdb0a36ec5ef364063bbd6f34b05c7466c9ef49
 
 # Create tables on first run (safe / idempotent)
 Base.metadata.create_all(bind=engine)
@@ -34,7 +38,11 @@ app.include_router(ai.router)
 app.include_router(users.router)
 app.include_router(projects.router)
 app.include_router(reports.router)
+<<<<<<< HEAD
 app.include_router(notifications.router)
+=======
+app.include_router(initial_setup.router)
+>>>>>>> 0fdb0a36ec5ef364063bbd6f34b05c7466c9ef49
 
 
 @app.get("/health")
