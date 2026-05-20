@@ -13,9 +13,8 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/timesheet.db"
 
     # ---- AI ----
-    gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash"  # Free-tier friendly
-
+    gemini_api_key: str = "" # Free-tier friendly
+    gemini_model: str = "gemini-flash-lite-latest"
     # ---- Behaviour tuning ----
     overload_threshold: float = 1.35   # 35% over team average = overloaded
     burnout_daily_hours: float = 10.0  # > this many hours/day = potential burnout

@@ -183,11 +183,25 @@ def create_task(project_id: int, payload: ProjectTaskIn, user: User = Depends(cu
     data = payload.model_dump(exclude={"assignee_ids"})
     t = ProjectTask(project_id=project_id, **data)
     if payload.assignee_ids:
-        users = db.query(User).filter(User.id.in_(payload.assignee_ids)).all()
-        t.assignees = users
+        assigned_users = db.query(User).filter(User.id.in_(payload.assignee_ids)).all()
+        t.assignees = assigned_users
     db.add(t)
     db.commit()
     db.refresh(t)
+
+    # Notify assignees that they got a new task
+    if t.assignees:
+        from app.routes.notifications import notify_many
+        notify_many(
+            db,
+            user_ids=[a.id for a in t.assignees],
+            title=f"📋 New task assigned: {t.task_description[:60]}",
+            body=f"Project: {p.name}" + (f" • Due {t.planned_end_date.isoformat()}" if t.planned_end_date else ""),
+            type="assigned",
+            link=f"/projects/{project_id}",
+        )
+        db.commit()
+
     return _task_dict(t)
 
 
@@ -200,6 +214,9 @@ def update_task(task_id: int, payload: dict, user: User = Depends(current_user),
     t = db.query(ProjectTask).filter(ProjectTask.id == task_id).first()
     if not t:
         raise HTTPException(404, "Task not found")
+
+    # Snapshot old assignees for notification logic
+    old_assignee_ids = {a.id for a in t.assignees}
 
     if user.role == "admin":
         # Allow all fields
@@ -214,8 +231,8 @@ def update_task(task_id: int, payload: dict, user: User = Depends(current_user),
                     except: v = None
                 setattr(t, k, v)
         if "assignee_ids" in payload:
-            users = db.query(User).filter(User.id.in_(payload["assignee_ids"])).all()
-            t.assignees = users
+            new_users = db.query(User).filter(User.id.in_(payload["assignee_ids"])).all()
+            t.assignees = new_users
     else:
         # Employee: must be assigned to this task
         if user.id not in [a.id for a in t.assignees]:
@@ -230,6 +247,37 @@ def update_task(task_id: int, payload: dict, user: User = Depends(current_user),
 
     db.commit()
     db.refresh(t)
+
+    # ----- Notifications -----
+    from app.routes.notifications import notify_many
+
+    new_assignee_ids = {a.id for a in t.assignees}
+    project_name = t.project.name if t.project else "your project"
+
+    # New assignees (added during this edit) -> "assigned" notification
+    added = new_assignee_ids - old_assignee_ids
+    if added:
+        notify_many(
+            db, user_ids=list(added),
+            title=f"📋 Task assigned: {t.task_description[:60]}",
+            body=f"Project: {project_name}",
+            type="assigned",
+            link=f"/projects/{t.project_id}",
+        )
+
+    # Existing assignees who weren't the editor -> "edited" notification
+    if user.role == "admin":
+        to_notify = (new_assignee_ids & old_assignee_ids) - {user.id}
+        if to_notify:
+            notify_many(
+                db, user_ids=list(to_notify),
+                title=f"✏️ Task updated: {t.task_description[:60]}",
+                body=f"Project: {project_name} was modified by admin.",
+                type="edited",
+                link=f"/projects/{t.project_id}",
+            )
+    db.commit()
+
     return _task_dict(t)
 
 
