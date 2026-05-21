@@ -125,6 +125,11 @@
                       <i data-lucide="pencil" class="w-3 h-3"></i>
                       <span x-text="IS_ADMIN ? 'Edit' : 'Update'"></span>
                     </button>
+                    <button @click="openComments(t)"
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 ml-1">
+                      <i data-lucide="message-circle" class="w-3 h-3"></i>
+                      <span x-show="commentCounts[t.id] > 0" x-text="commentCounts[t.id]"></span>
+                    </button>
                     {% if user.role == 'admin' %}
                     <button @click="confirmDeleteTask(t)" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-red-700 bg-red-50 hover:bg-red-100 ml-1">
                       <i data-lucide="trash-2" class="w-3 h-3"></i>
@@ -302,6 +307,86 @@
       </div>
       {% endif %}
 
+      <!-- ============ COMMENTS MODAL ============ -->
+      <div x-show="commentsOpen" x-cloak
+           class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+           @keydown.escape.window="commentsOpen = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-4 flex flex-col" style="max-height:80vh;" @click.outside="commentsOpen = false">
+          <!-- Header -->
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h3 class="font-semibold text-lg flex items-center gap-2">
+                <i data-lucide="message-circle" class="w-5 h-5 text-purple-600"></i>
+                Comments
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5 truncate max-w-md" x-text="commentTaskTitle"></p>
+            </div>
+            <button @click="commentsOpen = false" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+          </div>
+
+          <!-- Comments list -->
+          <div class="flex-1 overflow-y-auto p-5 space-y-3">
+            <template x-if="commentsLoading">
+              <div class="text-center text-slate-400 py-8">Loading comments...</div>
+            </template>
+            <template x-if="!commentsLoading && comments.length === 0">
+              <div class="text-center text-slate-400 py-8">
+                <i data-lucide="message-square" class="w-10 h-10 mx-auto mb-2 text-slate-300"></i>
+                <p class="text-sm">No comments yet — be the first!</p>
+              </div>
+            </template>
+            <template x-for="c in comments" :key="c.id">
+              <div class="flex gap-3">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white font-semibold text-sm shrink-0"
+                     x-text="c.author_name[0].toUpperCase()"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="bg-slate-50 rounded-2xl rounded-tl-sm px-4 py-2.5">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="font-semibold text-sm text-slate-800" x-text="c.author_name"></span>
+                      <span class="text-[10px] text-slate-400" x-text="c.time_ago"></span>
+                      <span class="text-[10px] text-slate-400" x-show="c.edited">· edited</span>
+                    </div>
+                    <template x-if="editingCommentId !== c.id">
+                      <p class="text-sm text-slate-700 whitespace-pre-wrap" x-text="c.body"></p>
+                    </template>
+                    <template x-if="editingCommentId === c.id">
+                      <div>
+                        <textarea x-model="editingCommentText" rows="3"
+                                  class="w-full text-sm px-2 py-1 rounded border border-slate-200 focus:border-brand-500 outline-none"></textarea>
+                        <div class="flex gap-1 mt-1">
+                          <button @click="saveCommentEdit(c)" class="text-xs px-2 py-1 rounded bg-brand-500 text-white">Save</button>
+                          <button @click="editingCommentId = null" class="text-xs px-2 py-1 rounded bg-slate-100">Cancel</button>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                  <div class="flex gap-3 mt-1 ml-2 text-[11px]"
+                       x-show="(c.author_id === CURRENT_USER_ID || IS_ADMIN) && editingCommentId !== c.id">
+                    <button x-show="c.author_id === CURRENT_USER_ID" @click="startEditComment(c)" class="text-slate-500 hover:text-slate-800">Edit</button>
+                    <button @click="deleteComment(c)" class="text-red-500 hover:text-red-700">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Add comment input -->
+          <div class="border-t border-slate-100 p-4">
+            <form @submit.prevent="postComment()" class="flex gap-2 items-end">
+              <textarea x-model="newComment" rows="2"
+                        @keydown.enter.exact.prevent="postComment()"
+                        placeholder="Write a comment... (use @Name to mention someone)"
+                        class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none resize-none"></textarea>
+              <button type="submit" :disabled="posting || !newComment.trim()"
+                      class="px-4 py-2 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-semibold disabled:opacity-50">
+                <i data-lucide="send" class="w-4 h-4"></i>
+              </button>
+            </form>
+            <p class="text-[10px] text-slate-400 mt-1.5">Press Enter to send · Shift+Enter for new line</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Toast -->
       <div x-show="toast.msg" x-cloak x-transition
            class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2"
@@ -329,6 +414,7 @@
 {% block scripts %}
 <script>
   const IS_ADMIN = {{ 'true' if user.role == 'admin' else 'false' }};
+  const CURRENT_USER_ID = {{ user.id }};
 
   function projectDetailApp(projectId) {
     return {
@@ -344,6 +430,18 @@
       deleteTaskTarget: null,
       deletingTask: false,
       toast: { msg: '', type: 'success' },
+
+      // ============ Comments state ============
+      commentsOpen: false,
+      commentsLoading: false,
+      comments: [],
+      commentCounts: {},
+      commentTaskId: null,
+      commentTaskTitle: '',
+      newComment: '',
+      posting: false,
+      editingCommentId: null,
+      editingCommentText: '',
 
       completedCount()  { return this.project?.tasks?.filter(t => t.status === 'completed').length || 0; },
       inProgressCount() { return this.project?.tasks?.filter(t => t.status === 'in_progress').length || 0; },
@@ -362,9 +460,113 @@
             const ur = await fetch('/api/users');
             if (ur.ok) this.allUsers = await ur.json();
           }
+
+          // Load comment counts for each task
+          await this.loadCommentCounts();
+
           this.$nextTick(() => lucide.createIcons());
         } catch (e) {
           this.loadError = e.message;
+        }
+      },
+
+      async loadCommentCounts() {
+        if (!this.project?.tasks) return;
+        await Promise.all(this.project.tasks.map(async t => {
+          try {
+            const r = await fetch(`/api/comments/count/${t.id}`);
+            if (r.ok) {
+              const d = await r.json();
+              this.commentCounts[t.id] = d.count;
+            }
+          } catch (e) {}
+        }));
+      },
+
+      async openComments(t) {
+        this.commentTaskId = t.id;
+        this.commentTaskTitle = t.task_description;
+        this.commentsOpen = true;
+        this.editingCommentId = null;
+        this.newComment = '';
+        await this.loadComments();
+        this.$nextTick(() => lucide.createIcons());
+      },
+
+      async loadComments() {
+        this.commentsLoading = true;
+        try {
+          const r = await fetch(`/api/comments/task/${this.commentTaskId}`);
+          if (r.ok) this.comments = await r.json();
+        } catch (e) {
+          this.showToast('Failed to load comments', 'error');
+        } finally {
+          this.commentsLoading = false;
+          this.$nextTick(() => lucide.createIcons());
+        }
+      },
+
+      async postComment() {
+        const body = this.newComment.trim();
+        if (!body) return;
+        this.posting = true;
+        try {
+          const r = await fetch(`/api/comments/task/${this.commentTaskId}`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({body}),
+          });
+          if (!r.ok) {
+            const e = await r.json();
+            throw new Error(e.detail || 'Failed to post');
+          }
+          this.newComment = '';
+          await this.loadComments();
+          this.commentCounts[this.commentTaskId] = (this.commentCounts[this.commentTaskId] || 0) + 1;
+        } catch (e) {
+          this.showToast(e.message, 'error');
+        } finally {
+          this.posting = false;
+        }
+      },
+
+      startEditComment(c) {
+        this.editingCommentId = c.id;
+        this.editingCommentText = c.body;
+      },
+
+      async saveCommentEdit(c) {
+        const body = this.editingCommentText.trim();
+        if (!body) return;
+        try {
+          const r = await fetch(`/api/comments/${c.id}`, {
+            method: 'PATCH',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({body}),
+          });
+          if (!r.ok) {
+            const e = await r.json();
+            throw new Error(e.detail || 'Failed to edit');
+          }
+          this.editingCommentId = null;
+          await this.loadComments();
+        } catch (e) {
+          this.showToast(e.message, 'error');
+        }
+      },
+
+      async deleteComment(c) {
+        if (!confirm('Delete this comment?')) return;
+        try {
+          const r = await fetch(`/api/comments/${c.id}`, { method: 'DELETE' });
+          if (!r.ok) {
+            const e = await r.json();
+            throw new Error(e.detail || 'Failed to delete');
+          }
+          await this.loadComments();
+          this.commentCounts[this.commentTaskId] = Math.max(0, (this.commentCounts[this.commentTaskId] || 1) - 1);
+        } catch (e) {
+          this.showToast(e.message, 'error');
         }
       },
 

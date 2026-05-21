@@ -4,5 +4,6 @@ from app.models.effort import Effort
 from app.models.project import Project
 from app.models.project_task import ProjectTask, project_task_assignees
 from app.models.notification import Notification
+from app.models.comment import Comment
 
-__all__ = ["User", "Task", "Effort", "Project", "ProjectTask", "project_task_assignees", "Notification"]
+__all__ = ["User", "Task", "Effort", "Project", "ProjectTask", "project_task_assignees", "Notification", "Comment"]
