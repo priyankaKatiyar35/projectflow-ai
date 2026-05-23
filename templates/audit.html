@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+{% block title %}Audit Log | Timesheet AI{% endblock %}
+
+{% block content %}
+<div class="p-6 lg:p-8 space-y-6 pr-32" x-data="auditApp()" x-init="init()">
+
+  <!-- Header -->
+  <div>
+    <p class="text-xs uppercase tracking-wide font-semibold text-brand-600">CMMI Compliance</p>
+    <h1 class="text-3xl font-bold text-slate-900 flex items-center gap-2">
+      <i data-lucide="shield-check" class="w-7 h-7 text-brand-500"></i>
+      Audit Log
+    </h1>
+    <p class="text-sm text-slate-500 mt-1">
+      Every important state change in the system is logged here, append-only, with full diff and actor tracking.
+      Use this for compliance reviews and security audits.
+    </p>
+  </div>
+
+  <!-- Stats cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3" x-show="stats">
+    <div class="bg-white rounded-xl border border-slate-100 p-4">
+      <p class="text-xs text-slate-500 uppercase font-semibold">Total events</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1" x-text="stats?.total_events ?? 0"></p>
+      <p class="text-[10px] text-slate-400 mt-1" x-text="`Last ${stats?.window_days ?? 30} days`"></p>
+    </div>
+    <div class="bg-red-50 rounded-xl border border-red-100 p-4">
+      <p class="text-xs text-red-700 uppercase font-semibold">Sensitive events</p>
+      <p class="text-2xl font-bold text-red-700 mt-1" x-text="stats?.sensitive_events ?? 0"></p>
+      <p class="text-[10px] text-red-600 mt-1">Deletions, role changes, failed logins</p>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-100 p-4">
+      <p class="text-xs text-slate-500 uppercase font-semibold">By category</p>
+      <div class="mt-1 space-y-0.5">
+        <template x-for="[cat, count] in Object.entries(stats?.by_category || {})" :key="cat">
+          <div class="flex justify-between text-xs">
+            <span class="capitalize text-slate-700" x-text="cat"></span>
+            <span class="font-semibold" x-text="count"></span>
+          </div>
+        </template>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-100 p-4">
+      <p class="text-xs text-slate-500 uppercase font-semibold">Top actors</p>
+      <div class="mt-1 space-y-0.5">
+        <template x-for="a in (stats?.top_actors || [])" :key="a.name">
+          <div class="flex justify-between text-xs">
+            <span class="truncate text-slate-700" x-text="a.name"></span>
+            <span class="font-semibold ml-2 shrink-0" x-text="a.count"></span>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white rounded-xl border border-slate-100 p-4">
+    <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+      <div>
+        <label class="text-[10px] uppercase tracking-wide font-semibold text-slate-500">Search</label>
+        <input x-model="filters.q" @input.debounce.400ms="load()" placeholder="action / actor..."
+               class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200 focus:border-brand-500 outline-none">
+      </div>
+      <div>
+        <label class="text-[10px] uppercase tracking-wide font-semibold text-slate-500">Action</label>
+        <select x-model="filters.action" @change="load()"
+                class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200">
+          <option value="">Any</option>
+          <option value="created">Created</option>
+          <option value="updated">Updated</option>
+          <option value="deleted">Deleted</option>
+          <option value="login">Login</option>
+          <option value="login_failed">Login failed</option>
+          <option value="logout">Logout</option>
+          <option value="role_changed">Role changed</option>
+          <option value="password_reset">Password reset</option>
+          <option value="password_changed">Password changed</option>
+          <option value="status_changed">Status changed</option>
+          <option value="reassigned">Reassigned</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-[10px] uppercase tracking-wide font-semibold text-slate-500">Category</label>
+        <select x-model="filters.category" @change="load()"
+                class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200">
+          <option value="">All</option>
+          <option value="data">Data</option>
+          <option value="auth">Auth</option>
+          <option value="security">Security</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-[10px] uppercase tracking-wide font-semibold text-slate-500">Entity</label>
+        <select x-model="filters.entity_type" @change="load()"
+                class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200">
+          <option value="">Any</option>
+          <option value="user">User</option>
+          <option value="project">Project</option>
+          <option value="project_task">Project Task</option>
+          <option value="objective">Objective</option>
+          <option value="comment">Comment</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-[10px] uppercase tracking-wide font-semibold text-slate-500">From</label>
+        <input x-model="filters.date_from" @change="load()" type="date"
+               class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200">
+      </div>
+      <div>
+        <label class="text-[10px] uppercase tracking-wide font-semibold text-slate-500">To</label>
+        <input x-model="filters.date_to" @change="load()" type="date"
+               class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200">
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+      <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+        <input type="checkbox" x-model="filters.sensitive_only" @change="load()"
+               class="rounded border-slate-300 text-brand-500 focus:ring-brand-500">
+        Sensitive events only (deletions, role changes, failed logins)
+      </label>
+      <div class="flex items-center gap-2">
+        <button @click="resetFilters()" class="text-xs text-slate-500 hover:underline">Reset filters</button>
+        <a :href="exportUrl()"
+           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i> Export CSV
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-xl border border-slate-100 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-slate-50 border-b border-slate-100 text-[10px] uppercase tracking-wide text-slate-500">
+            <th class="px-3 py-2 text-left">When</th>
+            <th class="px-3 py-2 text-left">Actor</th>
+            <th class="px-3 py-2 text-left">Action</th>
+            <th class="px-3 py-2 text-left">Entity</th>
+            <th class="px-3 py-2 text-left">Summary</th>
+            <th class="px-3 py-2 text-left">IP</th>
+            <th class="px-3 py-2 text-right">Details</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+          <template x-if="loading">
+            <tr><td colspan="7" class="text-center text-slate-400 py-6">Loading...</td></tr>
+          </template>
+          <template x-if="!loading && entries.length === 0">
+            <tr><td colspan="7" class="text-center text-slate-400 py-12">
+              <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+              <p>No audit entries match these filters.</p>
+            </td></tr>
+          </template>
+          <template x-for="e in entries" :key="e.id">
+            <tr class="hover:bg-slate-50" :class="e.is_sensitive ? 'bg-red-50/30' : ''">
+              <td class="px-3 py-2 text-xs text-slate-500 font-mono whitespace-nowrap" x-text="e.created_at_short"></td>
+              <td class="px-3 py-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white text-[10px] font-semibold">
+                    <span x-text="(e.actor_name || 'S')[0].toUpperCase()"></span>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-xs font-semibold text-slate-700 truncate" x-text="e.actor_name"></p>
+                    <p class="text-[10px] text-slate-400 truncate" x-text="e.actor_role"></p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-3 py-2">
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold"
+                      :class="{
+                        'bg-emerald-100 text-emerald-700': e.action === 'created' || e.action === 'login',
+                        'bg-amber-100 text-amber-700': e.action === 'updated' || e.action === 'status_changed' || e.action === 'reassigned',
+                        'bg-red-100 text-red-700': e.action === 'deleted' || e.action === 'login_failed' || e.action === 'role_changed',
+                        'bg-purple-100 text-purple-700': e.action === 'password_reset' || e.action === 'password_changed',
+                        'bg-slate-100 text-slate-700': !['created','login','updated','status_changed','reassigned','deleted','login_failed','role_changed','password_reset','password_changed'].includes(e.action),
+                      }"
+                      x-text="e.action.replace('_', ' ')"></span>
+                <span x-show="e.is_sensitive" title="Sensitive event"
+                      class="ml-1 inline-flex items-center px-1 rounded text-[10px] font-bold bg-red-200 text-red-800">!</span>
+              </td>
+              <td class="px-3 py-2 text-xs">
+                <span class="text-slate-500" x-text="e.entity_type"></span>
+                <span x-show="e.entity_id" class="text-slate-400" x-text="' #' + e.entity_id"></span>
+                <p class="text-[11px] text-slate-700 truncate max-w-[200px]" x-text="e.entity_label"></p>
+              </td>
+              <td class="px-3 py-2 text-xs text-slate-700 max-w-md truncate" x-text="e.summary"></td>
+              <td class="px-3 py-2 text-[10px] text-slate-400 font-mono" x-text="e.ip_address"></td>
+              <td class="px-3 py-2 text-right">
+                <button @click="openDetails(e)"
+                        x-show="e.details"
+                        class="text-xs text-brand-600 hover:underline font-semibold">View →</button>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex items-center justify-between px-4 py-3 border-t border-slate-100 text-xs text-slate-500">
+      <div>
+        Showing <b x-text="offset + 1"></b> – <b x-text="Math.min(offset + limit, total)"></b> of <b x-text="total"></b> entries
+      </div>
+      <div class="flex gap-2">
+        <button @click="prevPage()" :disabled="offset === 0"
+                class="px-3 py-1 rounded border border-slate-200 disabled:opacity-50">← Prev</button>
+        <button @click="nextPage()" :disabled="offset + limit >= total"
+                class="px-3 py-1 rounded border border-slate-200 disabled:opacity-50">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== DETAILS MODAL ============== -->
+  <div x-show="detailsOpen" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+       @keydown.escape.window="detailsOpen = false">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto" @click.outside="detailsOpen = false">
+      <div class="sticky top-0 bg-white border-b border-slate-100 px-5 py-4 flex justify-between items-center">
+        <div>
+          <h3 class="font-semibold text-lg flex items-center gap-2">
+            <i data-lucide="info" class="w-5 h-5 text-brand-500"></i>
+            Audit Entry #<span x-text="selectedEntry?.id"></span>
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5" x-text="selectedEntry?.summary"></p>
+        </div>
+        <button @click="detailsOpen = false" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-5 space-y-3 text-sm">
+        <div class="grid grid-cols-2 gap-3">
+          <div><span class="text-xs text-slate-500">Timestamp:</span><br><b x-text="selectedEntry?.created_at"></b></div>
+          <div><span class="text-xs text-slate-500">Actor:</span><br><b x-text="selectedEntry?.actor_name + ' (' + (selectedEntry?.actor_role || '?') + ')'"></b></div>
+          <div><span class="text-xs text-slate-500">IP:</span><br><b class="font-mono text-xs" x-text="selectedEntry?.ip_address"></b></div>
+          <div><span class="text-xs text-slate-500">Category:</span><br><b class="capitalize" x-text="selectedEntry?.category"></b></div>
+          <div><span class="text-xs text-slate-500">Action:</span><br><b x-text="selectedEntry?.action"></b></div>
+          <div><span class="text-xs text-slate-500">Entity:</span><br><b x-text="selectedEntry?.entity_type + ' #' + selectedEntry?.entity_id"></b></div>
+        </div>
+
+        <div x-show="selectedEntry?.details?.fields_changed?.length">
+          <p class="text-xs uppercase tracking-wide font-semibold text-slate-500 mt-3 mb-1">Changes</p>
+          <table class="w-full text-xs border border-slate-200 rounded">
+            <thead class="bg-slate-50">
+              <tr>
+                <th class="px-2 py-1 text-left">Field</th>
+                <th class="px-2 py-1 text-left">Before</th>
+                <th class="px-2 py-1 text-left">After</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="field in (selectedEntry?.details?.fields_changed || [])" :key="field">
+                <tr class="border-t border-slate-100">
+                  <td class="px-2 py-1 font-semibold" x-text="field"></td>
+                  <td class="px-2 py-1 text-red-700 font-mono" x-text="JSON.stringify(selectedEntry?.details?.before?.[field] ?? '∅')"></td>
+                  <td class="px-2 py-1 text-emerald-700 font-mono" x-text="JSON.stringify(selectedEntry?.details?.after?.[field] ?? '∅')"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+
+        <div x-show="selectedEntry?.user_agent">
+          <p class="text-xs uppercase tracking-wide font-semibold text-slate-500 mt-3 mb-1">User Agent</p>
+          <p class="text-xs font-mono text-slate-600 break-all" x-text="selectedEntry?.user_agent"></p>
+        </div>
+
+        <details class="mt-4">
+          <summary class="text-xs cursor-pointer text-slate-500 hover:text-slate-700">Raw JSON</summary>
+          <pre class="mt-2 p-3 bg-slate-50 rounded text-[10px] overflow-x-auto" x-text="JSON.stringify(selectedEntry, null, 2)"></pre>
+        </details>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function auditApp() {
+  return {
+    entries: [],
+    total: 0,
+    offset: 0,
+    limit: 50,
+    loading: true,
+    stats: null,
+
+    filters: {
+      q: '', action: '', category: '', entity_type: '',
+      date_from: '', date_to: '', sensitive_only: false,
+    },
+
+    detailsOpen: false,
+    selectedEntry: null,
+
+    async init() {
+      await Promise.all([this.load(), this.loadStats()]);
+    },
+
+    async loadStats() {
+      try {
+        const r = await fetch('/api/audit/stats?days=30');
+        if (r.ok) this.stats = await r.json();
+      } catch (e) {}
+    },
+
+    async load() {
+      this.loading = true;
+      try {
+        const qs = new URLSearchParams();
+        Object.entries(this.filters).forEach(([k, v]) => {
+          if (v !== '' && v !== false && v !== null) qs.append(k, v);
+        });
+        qs.append('offset', this.offset);
+        qs.append('limit', this.limit);
+        const r = await fetch('/api/audit?' + qs.toString());
+        if (r.ok) {
+          const data = await r.json();
+          this.entries = data.entries;
+          this.total = data.total;
+        }
+      } catch (e) {}
+      finally {
+        this.loading = false;
+        this.$nextTick(() => lucide.createIcons());
+      }
+    },
+
+    prevPage() { if (this.offset > 0) { this.offset = Math.max(0, this.offset - this.limit); this.load(); } },
+    nextPage() { if (this.offset + this.limit < this.total) { this.offset += this.limit; this.load(); } },
+
+    resetFilters() {
+      this.filters = { q: '', action: '', category: '', entity_type: '', date_from: '', date_to: '', sensitive_only: false };
+      this.offset = 0;
+      this.load();
+    },
+
+    exportUrl() {
+      const qs = new URLSearchParams();
+      if (this.filters.date_from) qs.append('date_from', this.filters.date_from);
+      if (this.filters.date_to) qs.append('date_to', this.filters.date_to);
+      if (this.filters.entity_type) qs.append('entity_type', this.filters.entity_type);
+      if (this.filters.sensitive_only) qs.append('sensitive_only', 'true');
+      return '/api/audit/export.csv?' + qs.toString();
+    },
+
+    openDetails(e) {
+      this.selectedEntry = e;
+      this.detailsOpen = true;
+      this.$nextTick(() => lucide.createIcons());
+    },
+  };
+}
+</script>
+{% endblock %}

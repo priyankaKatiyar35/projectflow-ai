@@ -4,76 +4,132 @@
 {% block content %}
 <div class="p-6 lg:p-8 max-w-7xl mx-auto" x-data="tasksApp()" x-init="load()">
 
-  <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+  <div class="flex justify-between items-end mb-6 flex-wrap gap-3">
     <div>
-      <h1 class="text-2xl font-bold text-slate-900">Tasks</h1>
-      <p class="text-sm text-slate-500 mt-0.5">Manage and track all work items</p>
+      <p class="text-xs uppercase tracking-wide font-semibold text-brand-600 dark:text-brand-400">Work items</p>
+      <h1 class="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+        <i data-lucide="check-square" class="w-7 h-7 text-brand-500"></i> Tasks
+      </h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        {% if user.role == 'admin' %}All tasks across all projects{% else %}Tasks assigned to you{% endif %}
+      </p>
     </div>
-    <div class="flex gap-2">
-      <select x-model="statusFilter" @change="load()"
-              class="px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white">
+    <div class="flex gap-2 flex-wrap">
+      <div class="relative">
+        <input x-model="search" @input="applyFilters()" type="text" placeholder="Search tasks..."
+               class="pl-8 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:border-brand-500 outline-none">
+        <i data-lucide="search" class="w-4 h-4 absolute left-2.5 top-2.5 text-slate-400"></i>
+      </div>
+      <select x-model="statusFilter" @change="applyFilters()"
+              class="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
         <option value="">All statuses</option>
-        <option value="pending">Pending</option>
+        <option value="not_started">Not started</option>
         <option value="in_progress">In progress</option>
         <option value="completed">Completed</option>
+        <option value="blocked">Blocked</option>
+      </select>
+      <select x-model="projectFilter" @change="applyFilters()"
+              class="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm">
+        <option value="">All projects</option>
+        <template x-for="p in projects" :key="p.id">
+          <option :value="p.id" x-text="p.name"></option>
+        </template>
       </select>
     </div>
   </div>
 
-  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-    <table class="w-full text-sm">
-      <thead class="bg-slate-50 text-xs uppercase text-slate-500">
-        <tr>
-          <th class="px-4 py-3 text-left">Task</th>
-          <th class="px-4 py-3 text-left">Sub-task</th>
-          <th class="px-4 py-3 text-left">Priority</th>
-          <th class="px-4 py-3 text-left">Status</th>
-          <th class="px-4 py-3 text-left">Deadline</th>
-          <th class="px-4 py-3 text-left">AI risk</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-slate-100">
-        <template x-for="t in tasks" :key="t.id">
-          <tr class="hover:bg-slate-50">
-            <td class="px-4 py-3 font-medium" x-text="t.task"></td>
-            <td class="px-4 py-3 text-slate-600" x-text="t.sub_task"></td>
-            <td class="px-4 py-3">
-              <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
-                    :class="{
-                      'bg-red-100 text-red-700':    t.priority === 'urgent',
-                      'bg-orange-100 text-orange-700': t.priority === 'high',
-                      'bg-blue-100 text-blue-700':  t.priority === 'medium',
-                      'bg-slate-100 text-slate-600':t.priority === 'low',
-                    }" x-text="t.priority"></span>
-            </td>
-            <td class="px-4 py-3">
-              <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
-                    :class="{
-                      'bg-emerald-100 text-emerald-700': t.status === 'completed',
-                      'bg-amber-100 text-amber-700':     t.status === 'in_progress',
-                      'bg-rose-100 text-rose-700':       t.status === 'pending',
-                    }" x-text="t.status.replace('_', ' ')"></span>
-            </td>
-            <td class="px-4 py-3 text-slate-600" x-text="t.deadline ? new Date(t.deadline).toLocaleDateString() : '—'"></td>
-            <td class="px-4 py-3">
-              <button @click="checkRisk(t.id)" class="text-brand-600 hover:underline text-xs font-medium">Check risk</button>
-              <span x-show="risks[t.id]"
-                    :class="{
-                      'bg-red-100 text-red-700':   risks[t.id]?.risk === 'high',
-                      'bg-amber-100 text-amber-700': risks[t.id]?.risk === 'medium',
-                      'bg-emerald-100 text-emerald-700': risks[t.id]?.risk === 'low',
-                    }"
-                    class="ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
-                    x-text="risks[t.id]?.risk"></span>
-              <p x-show="risks[t.id]" class="text-xs text-slate-500 mt-1" x-text="risks[t.id]?.reason"></p>
-            </td>
+  <!-- Stats strip -->
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4">
+      <p class="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">Total</p>
+      <p class="text-2xl font-bold text-slate-900 dark:text-white mt-1" x-text="allTasks.length"></p>
+    </div>
+    <div class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-900/40 p-4">
+      <p class="text-xs uppercase font-semibold text-emerald-700 dark:text-emerald-400">Completed</p>
+      <p class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 mt-1" x-text="countByStatus('completed')"></p>
+    </div>
+    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/40 p-4">
+      <p class="text-xs uppercase font-semibold text-blue-700 dark:text-blue-400">In progress</p>
+      <p class="text-2xl font-bold text-blue-700 dark:text-blue-400 mt-1" x-text="countByStatus('in_progress')"></p>
+    </div>
+    <div class="bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4">
+      <p class="text-xs uppercase font-semibold text-slate-600 dark:text-slate-400">Not started</p>
+      <p class="text-2xl font-bold text-slate-700 dark:text-slate-300 mt-1" x-text="countByStatus('not_started')"></p>
+    </div>
+    <div class="bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-900/40 p-4">
+      <p class="text-xs uppercase font-semibold text-red-700 dark:text-red-400">Overdue</p>
+      <p class="text-2xl font-bold text-red-700 dark:text-red-400 mt-1" x-text="countOverdue()"></p>
+    </div>
+  </div>
+
+  <!-- Tasks table -->
+  <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 dark:bg-slate-900/50 text-xs uppercase text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-700">
+          <tr>
+            <th class="px-4 py-3 text-left">Task</th>
+            <th class="px-4 py-3 text-left">Project</th>
+            <th class="px-4 py-3 text-left">Phase</th>
+            <th class="px-4 py-3 text-left">Assignees</th>
+            <th class="px-4 py-3 text-left">Due</th>
+            <th class="px-4 py-3 text-left">Effort</th>
+            <th class="px-4 py-3 text-left">Status</th>
           </tr>
-        </template>
-        <template x-if="tasks.length === 0">
-          <tr><td colspan="6" class="px-4 py-8 text-center text-slate-400">No tasks yet.</td></tr>
-        </template>
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+          <template x-if="loading">
+            <tr><td colspan="7" class="text-center text-slate-400 py-12">Loading...</td></tr>
+          </template>
+          <template x-if="!loading && filtered.length === 0">
+            <tr><td colspan="7" class="text-center text-slate-400 py-16">
+              <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-3 text-slate-300 dark:text-slate-600"></i>
+              <p class="font-semibold">No tasks found</p>
+              <p class="text-xs mt-1">{% if user.role == 'admin' %}Try adjusting filters or create a project task.{% else %}You don't have any assigned tasks yet.{% endif %}</p>
+            </td></tr>
+          </template>
+          <template x-for="t in filtered" :key="t.id">
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+              <td class="px-4 py-3 max-w-xs">
+                <a :href="`/projects/${t.project_id}`" class="font-medium text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 block truncate" x-text="t.task_description || '(no description)'"></a>
+                <p class="text-xs text-slate-400 truncate" x-show="t.action_item" x-text="t.action_item"></p>
+              </td>
+              <td class="px-4 py-3">
+                <a :href="`/projects/${t.project_id}`" class="text-xs text-brand-600 dark:text-brand-400 hover:underline" x-text="t.project_name"></a>
+              </td>
+              <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 truncate max-w-[150px]" x-text="t.milestone_phase || '—'"></td>
+              <td class="px-4 py-3">
+                <div class="flex -space-x-1">
+                  <template x-for="a in (t.assignees || []).slice(0, 3)" :key="a.id">
+                    <div class="w-6 h-6 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white text-[10px] font-semibold border-2 border-white dark:border-slate-800" :title="a.name" x-text="a.name[0].toUpperCase()"></div>
+                  </template>
+                  <template x-if="(t.assignees || []).length > 3">
+                    <div class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] font-semibold border-2 border-white dark:border-slate-800" x-text="'+' + ((t.assignees || []).length - 3)"></div>
+                  </template>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-xs">
+                <span :class="t.is_overdue ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-slate-600 dark:text-slate-400'" x-text="t.planned_end_date || '—'"></span>
+              </td>
+              <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-400">
+                <span x-text="(t.actual_effort || 0) + 'h'"></span>
+                <span class="text-slate-400">/ <span x-text="(t.planned_effort || 0) + 'h'"></span></span>
+              </td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase"
+                      :class="{
+                        'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400': t.status === 'completed',
+                        'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': t.status === 'in_progress',
+                        'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300': t.status === 'not_started' || !t.status,
+                        'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': t.status === 'blocked',
+                      }"
+                      x-text="(t.status || 'not_started').replace('_', ' ')"></span>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 {% endblock %}
@@ -82,19 +138,64 @@
 <script>
 function tasksApp() {
   return {
-    tasks: [],
-    risks: {},
-    statusFilter: new URLSearchParams(location.search).get('status') || '',
+    loading: true,
+    allTasks: [],
+    projects: [],
+    filtered: [],
+    search: '',
+    statusFilter: '',
+    projectFilter: '',
 
     async load() {
-      const url = '/api/tasks' + (this.statusFilter ? '?status=' + this.statusFilter : '');
-      const r = await fetch(url);
-      this.tasks = await r.json();
+      this.loading = true;
+      try {
+        const pr = await fetch('/api/projects');
+        if (pr.ok) {
+          this.projects = await pr.json();
+          // Flatten all tasks
+          const tasks = [];
+          for (const p of this.projects) {
+            const det = await fetch(`/api/projects/${p.id}`);
+            if (det.ok) {
+              const data = await det.json();
+              for (const t of (data.tasks || [])) {
+                tasks.push({...t, project_name: p.name, project_id: p.id});
+              }
+            }
+          }
+          this.allTasks = tasks;
+          this.applyFilters();
+        }
+      } catch (e) {}
+      finally {
+        this.loading = false;
+        this.$nextTick(() => lucide.createIcons());
+      }
     },
 
-    async checkRisk(id) {
-      const r = await fetch('/api/ai/deadline-risk/' + id);
-      this.risks[id] = await r.json();
+    applyFilters() {
+      let f = this.allTasks;
+      if (this.statusFilter) f = f.filter(t => (t.status || 'not_started') === this.statusFilter);
+      if (this.projectFilter) f = f.filter(t => String(t.project_id) === String(this.projectFilter));
+      if (this.search) {
+        const q = this.search.toLowerCase();
+        f = f.filter(t =>
+          (t.task_description || '').toLowerCase().includes(q) ||
+          (t.action_item || '').toLowerCase().includes(q) ||
+          (t.milestone_phase || '').toLowerCase().includes(q) ||
+          (t.project_name || '').toLowerCase().includes(q)
+        );
+      }
+      this.filtered = f;
+      this.$nextTick(() => lucide.createIcons());
+    },
+
+    countByStatus(s) {
+      return this.allTasks.filter(t => (t.status || 'not_started') === s).length;
+    },
+
+    countOverdue() {
+      return this.allTasks.filter(t => t.is_overdue).length;
     },
   };
 }

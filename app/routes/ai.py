@@ -19,6 +19,25 @@ from app.services import ai_service
 router = APIRouter(prefix="/api/ai", tags=["ai"])
 
 
+# ----- Dashboard data endpoint -----
+@router.get("/dashboard")
+def dashboard_data(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """All data the dashboard needs in one call."""
+    is_admin = user.role == "admin"
+    scope_uid = None if is_admin else user.id
+
+    return {
+        "is_admin": is_admin,
+        "stats": analytics.dashboard_stats(db, scope_uid),
+        "status_breakdown": analytics.status_breakdown(db, scope_uid),
+        "productivity_trend": analytics.productivity_trend(db, scope_uid, 14),
+        "effort_by_category": analytics.effort_by_category(db, scope_uid),
+        "employee_activity": analytics.employee_activity(db) if is_admin else None,
+        "employee_progress": analytics.employee_progress(db) if is_admin else None,
+        "recent_activity": analytics.recent_activity(db, 8),
+    }
+
+
 # ----- 1) AI chat with your data -----
 @router.post("/chat", response_model=AIChatOut)
 def chat(payload: AIChatIn, user: User = Depends(current_user), db: Session = Depends(get_db)):

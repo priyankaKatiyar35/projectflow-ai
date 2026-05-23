@@ -104,6 +104,11 @@
                       class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100">
                 <i data-lucide="pencil" class="w-3 h-3"></i> Edit
               </button>
+              <button @click="resetPassword(u)"
+                      class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 ml-1"
+                      title="Generate password reset link for this user">
+                <i data-lucide="key-round" class="w-3 h-3"></i> Reset
+              </button>
               <button @click="confirmDelete(u)"
                       :disabled="u.id === currentUserId"
                       :class="u.id === currentUserId
@@ -218,6 +223,35 @@
     </div>
   </div>
 
+  <!-- ============== RESET PASSWORD RESULT MODAL ============== -->
+  <div x-show="resetResult" x-cloak
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+       @keydown.escape.window="resetResult = null">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg" @click.outside="resetResult = null">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-semibold text-lg flex items-center gap-2">
+          <i data-lucide="key-round" class="w-5 h-5 text-amber-600"></i>
+          Password reset link generated
+        </h3>
+        <button @click="resetResult = null" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-5">
+        <p class="text-sm text-slate-600 mb-4">
+          Share this link with <b x-text="resetResult?.user_name"></b> (<span x-text="resetResult?.user_email"></span>). They can use it to set a new password.
+        </p>
+        <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg break-all text-xs font-mono text-amber-900" x-text="resetResult?.reset_link"></div>
+        <div class="flex items-center justify-between mt-3 text-xs text-slate-500">
+          <span>⏰ Expires in 1 hour</span>
+          <button @click="copyResetLink()" class="text-brand-600 font-semibold hover:underline">
+            <i data-lucide="copy" class="w-3 h-3 inline"></i> Copy link
+          </button>
+        </div>
+        <button @click="resetResult = null"
+                class="w-full mt-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-medium">Done</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div x-show="toast.msg" x-cloak x-transition
        class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2"
@@ -246,6 +280,7 @@
       deleting: false,
       currentUserId: CURRENT_USER_ID,
       toast: { msg: '', type: 'success' },
+      resetResult: null,
 
       filteredUsers() {
         const q = this.search.toLowerCase().trim();
@@ -337,6 +372,31 @@
           this.showToast(e.message, 'error');
         } finally {
           this.deleting = false;
+        }
+      },
+
+      async resetPassword(u) {
+        if (!confirm(`Generate a password reset link for ${u.full_name}?\n\nThe user will be notified, and you'll get a link to share with them.`)) return;
+        try {
+          const r = await fetch(`/api/users/${u.id}/reset-password`, { method: 'POST' });
+          if (!r.ok) {
+            const e = await r.json();
+            throw new Error(e.detail || 'Reset failed');
+          }
+          this.resetResult = await r.json();
+          this.$nextTick(() => lucide.createIcons());
+        } catch (e) {
+          this.showToast(e.message, 'error');
+        }
+      },
+
+      async copyResetLink() {
+        if (!this.resetResult?.reset_link) return;
+        try {
+          await navigator.clipboard.writeText(this.resetResult.reset_link);
+          this.showToast('Link copied to clipboard');
+        } catch (e) {
+          this.showToast('Could not copy. Select and copy manually.', 'error');
         }
       },
 

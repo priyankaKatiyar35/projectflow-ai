@@ -156,8 +156,9 @@ def notify(
     body: Optional[str] = None,
     type: str = "system",
     link: Optional[str] = None,
+    send_email: bool = True,
 ):
-    """Create one notification. Caller must `db.commit()` after.
+    """Create one notification + optionally send email. Caller must `db.commit()` after.
 
     Example use inside another route:
         from app.routes.notifications import notify
@@ -176,6 +177,25 @@ def notify(
         link=link,
     )
     db.add(n)
+
+    # ----- Send email if user wants it for this type -----
+    if send_email:
+        try:
+            from app.services.email_service import send_notification_email
+            recipient = db.query(User).filter(User.id == user_id).first()
+            if recipient and recipient.wants_email_for(type):
+                send_notification_email(
+                    to_email=recipient.email,
+                    to_name=recipient.full_name,
+                    title=title,
+                    body=body or "",
+                    link_path=link,
+                    notification_type=type,
+                )
+        except Exception as e:
+            # Email failure must never break the notification itself
+            print(f"[notify] Email send failed for user {user_id}: {e}")
+
     return n
 
 

@@ -24,13 +24,15 @@
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1.5">Email</label>
           <input name="email" type="email" required autofocus
-                 value="admin@demo.com"
+                 placeholder="you@company.com"
                  class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition">
         </div>
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1.5">Password</label>
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="text-xs font-semibold uppercase tracking-wide text-slate-600">Password</label>
+            <a href="/forgot-password" class="text-xs text-brand-600 hover:underline font-medium">Forgot password?</a>
+          </div>
           <input name="password" type="password" required
-                 value="admin123"
                  class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition">
         </div>
         <button type="submit"
@@ -39,10 +41,6 @@
         </button>
       </form>
 
-      <div class="mt-6 pt-5 border-t border-slate-100 text-xs text-slate-500 space-y-1">
-        <p><b>Admin:</b> admin@demo.com / admin123</p>
-        <p><b>Employee:</b> rahul@demo.com / employee123</p>
-      </div>
     </div>
   </div>
 </div>

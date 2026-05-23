@@ -1,2 +1,39 @@
-/.env
-/.env.example
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment & secrets
+.env
+.env.local
+
+# Database (contains real user data - never upload!)
+data/*.db
+data/*.sqlite
+
+# Uploaded files (never push user uploads to git)
+data/uploads/
+
+# Build / packaging
+*.egg-info/
+dist/
+build/
+
+# Logs
+*.log

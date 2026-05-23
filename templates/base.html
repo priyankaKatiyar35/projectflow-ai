@@ -1,183 +1,280 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
   <title>{% block title %}Timesheet AI{% endblock %}</title>
-
-  <!-- Tailwind via CDN — zero build step -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Alpine.js for lightweight interactivity -->
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Lucide icons -->
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-  <!-- Inter font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="/static/css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <script>
+    (function() {
+      try {
+        var theme = localStorage.getItem('theme') || 'auto';
+        var isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) document.documentElement.classList.add('dark');
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+  </style>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: { sans: ['Inter', 'sans-serif'] },
           colors: {
-            brand: { 500: '#667eea', 600: '#5a67d8', 700: '#4c51bf' },
+            brand:  { 400: '#7d8eed', 500: '#667eea', 600: '#5a67d8', 700: '#4c51bf' },
             accent: { 500: '#764ba2' },
           },
         },
       },
     }
   </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body class="bg-slate-50 font-sans text-slate-800">
+<body class="bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-200">
 
 {% if user %}
 <div class="flex min-h-screen">
 
-  <!-- Sidebar -->
-  <aside class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
-    <div class="px-6 py-5 border-b border-slate-100">
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 hidden md:flex flex-col">
+    <div class="px-6 py-5 border-b border-slate-100 dark:border-slate-800">
       <div class="flex items-center gap-2">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center">
           <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
         </div>
         <div>
-          <p class="font-bold text-slate-900 leading-tight">Timesheet AI</p>
-          <p class="text-xs text-slate-500">Project planning</p>
+          <p class="font-bold text-slate-900 dark:text-white leading-tight">Timesheet AI</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">CMMI compliant</p>
         </div>
       </div>
     </div>
 
-    <nav class="flex-1 px-3 py-4 space-y-1">
-      <a href="/" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 {% if request.url.path == '/' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white hover:from-brand-600{% endif %}">
+    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <a href="/" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition {% if request.url.path == '/' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-sm{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
         <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
       </a>
-      <a href="/projects" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 {% if request.url.path.startswith('/projects') %}bg-gradient-to-r from-brand-500 to-accent-500 text-white{% endif %}">
+      <a href="/projects" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition {% if request.url.path.startswith('/projects') %}bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-sm{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
         <i data-lucide="folder-kanban" class="w-4 h-4"></i> Projects
       </a>
-      <a href="/tasks" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 {% if request.url.path == '/tasks' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white{% endif %}">
+      <a href="/tasks" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition {% if request.url.path == '/tasks' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-sm{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
         <i data-lucide="check-square" class="w-4 h-4"></i> Tasks
       </a>
-      <a href="/reports" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 {% if request.url.path == '/reports' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white{% endif %}">
+      <a href="/okrs" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition {% if request.url.path == '/okrs' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-sm{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+        <i data-lucide="target" class="w-4 h-4"></i> Goals &amp; OKRs
+      </a>
+      <a href="/reports" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition {% if request.url.path == '/reports' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-sm{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
         <i data-lucide="file-bar-chart" class="w-4 h-4"></i> CMMI Reports
       </a>
+
       {% if user.role == 'admin' %}
-      <a href="/admin/users" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 {% if request.url.path == '/admin/users' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white{% endif %}">
-        <i data-lucide="users" class="w-4 h-4"></i> Users
-        <span class="ml-auto text-[10px] uppercase font-semibold {% if request.url.path == '/admin/users' %}text-white/80{% else %}text-slate-400{% endif %}">Admin</span>
-      </a>
+      <div class="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800">
+        <p class="text-[10px] uppercase tracking-wider font-semibold text-slate-400 dark:text-slate-500 px-3 mb-1">Admin</p>
+        <a href="/admin/users" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition {% if request.url.path == '/admin/users' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-sm{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+          <i data-lucide="users" class="w-4 h-4"></i> Users
+        </a>
+        <a href="/audit" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition {% if request.url.path == '/audit' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-sm{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+          <i data-lucide="shield-check" class="w-4 h-4"></i> Audit Log
+        </a>
+      </div>
       {% endif %}
     </nav>
 
-    <div class="px-3 py-4 border-t border-slate-100">
-      <div class="flex items-center gap-3 px-2 py-2">
-        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white font-semibold text-sm">
-          {{ user.full_name[0]|upper }}
+    <!-- Profile dropdown -->
+    <div class="px-3 py-3 border-t border-slate-100 dark:border-slate-800">
+      <div x-data="{open:false}" class="relative">
+        <button @click="open = !open" class="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-left">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white font-semibold text-sm shrink-0">
+            {{ user.full_name[0]|upper }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-slate-900 dark:text-white truncate">{{ user.full_name }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 capitalize">{{ user.role }}</p>
+          </div>
+          <i data-lucide="chevron-up" class="w-4 h-4 text-slate-400"></i>
+        </button>
+        <div x-show="open" x-cloak @click.outside="open=false" x-transition
+             class="absolute bottom-full left-0 right-0 mb-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden">
+          <a href="/change-password" class="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700">
+            <i data-lucide="key-round" class="w-4 h-4"></i> Change password
+          </a>
+          <a href="/email-settings" class="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700">
+            <i data-lucide="mail" class="w-4 h-4"></i> Email settings
+          </a>
+          <a href="/logout" class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-t border-slate-100 dark:border-slate-700">
+            <i data-lucide="log-out" class="w-4 h-4"></i> Sign out
+          </a>
         </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-slate-900 truncate">{{ user.full_name }}</p>
-          <p class="text-xs text-slate-500 capitalize">{{ user.role }}</p>
-        </div>
-        <a href="/logout" title="Logout" class="text-slate-400 hover:text-slate-700">
-          <i data-lucide="log-out" class="w-4 h-4"></i>
-        </a>
       </div>
     </div>
   </aside>
 
-  <!-- Main area -->
-  <main class="flex-1 overflow-x-hidden relative">
+  <!-- MAIN AREA -->
+  <main class="flex-1 overflow-x-hidden flex flex-col">
 
-    <!-- Notification bell (top-right, floating, available on every page) -->
-    <div x-data="notifBell()" x-init="init()"
-         class="fixed top-4 right-4 z-40">
+    <!-- HEADER BAR - search + theme + bell on top right -->
+    <header class="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+      <div class="flex items-center justify-between px-6 py-2.5 gap-3">
+        <button x-data @click="$dispatch('open-search')"
+                class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm text-slate-500 dark:text-slate-400 transition w-full max-w-md">
+          <i data-lucide="search" class="w-4 h-4"></i>
+          <span class="flex-1 text-left">Search projects, tasks, users...</span>
+          <kbd class="hidden sm:inline px-1.5 py-0.5 text-[10px] font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-500">⌘K</kbd>
+        </button>
 
-      <button @click="toggle()"
-              class="relative w-11 h-11 rounded-full bg-white border border-slate-200 shadow-sm hover:shadow-md hover:bg-slate-50 flex items-center justify-center transition">
-        <i data-lucide="bell" class="w-5 h-5 text-slate-700"></i>
-        <span x-show="unreadCount > 0" x-cloak
-              class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
-              x-text="unreadCount > 99 ? '99+' : unreadCount"></span>
-      </button>
-
-      <!-- Dropdown panel -->
-      <div x-show="open" x-cloak
-           @click.outside="open = false"
-           x-transition
-           class="absolute top-12 right-0 w-96 max-w-[calc(100vw-32px)] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col"
-           style="max-height: 70vh;">
-
-        <!-- Header -->
-        <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <i data-lucide="bell" class="w-4 h-4 text-slate-700"></i>
-            <h3 class="font-semibold text-sm">Notifications</h3>
-            <span x-show="unreadCount > 0"
-                  class="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold"
-                  x-text="unreadCount + ' new'"></span>
+        <div class="flex items-center gap-1">
+          <!-- Theme toggle -->
+          <div x-data="themeToggle()" x-init="init()">
+            <button @click="cycleTheme()" :title="'Theme: ' + theme"
+                    class="w-9 h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 transition">
+              <i x-show="theme === 'light'" data-lucide="sun" class="w-4 h-4"></i>
+              <i x-show="theme === 'dark'"  data-lucide="moon" class="w-4 h-4"></i>
+              <i x-show="theme === 'auto'"  data-lucide="monitor" class="w-4 h-4"></i>
+            </button>
           </div>
-          <div class="flex items-center gap-1">
-            <button x-show="unreadCount > 0" @click="markAllRead()"
-                    title="Mark all as read"
-                    class="p-1.5 text-slate-500 hover:bg-slate-100 rounded">
-              <i data-lucide="check-check" class="w-4 h-4"></i>
+
+          <!-- Notification bell -->
+          <div x-data="notifBell()" x-init="init()" class="relative">
+            <button @click="toggle()" class="relative w-9 h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 transition">
+              <i data-lucide="bell" class="w-4 h-4"></i>
+              <span x-show="unreadCount > 0" x-cloak
+                    class="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center"
+                    x-text="unreadCount > 9 ? '9+' : unreadCount"></span>
             </button>
-            <button x-show="notifications.length > 0" @click="clearRead()"
-                    title="Clear read notifications"
-                    class="p-1.5 text-slate-500 hover:bg-slate-100 rounded">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
+
+            <div x-show="open" x-cloak @click.outside="open=false" x-transition
+                 class="absolute top-11 right-0 w-96 max-w-[calc(100vw-24px)] bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col"
+                 style="max-height: 70vh;">
+              <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <h3 class="font-semibold text-sm text-slate-900 dark:text-white">Notifications</h3>
+                  <span x-show="unreadCount > 0" class="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-semibold" x-text="unreadCount + ' new'"></span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button x-show="unreadCount > 0" @click="markAllRead()" class="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded">
+                    <i data-lucide="check-check" class="w-4 h-4"></i>
+                  </button>
+                  <button x-show="notifications.length > 0" @click="clearRead()" class="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="overflow-y-auto flex-1">
+                <template x-if="loading"><div class="p-6 text-center text-sm text-slate-400">Loading...</div></template>
+                <template x-if="!loading && notifications.length === 0">
+                  <div class="p-8 text-center text-slate-400">
+                    <i data-lucide="bell-off" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+                    <p class="text-sm">No notifications yet</p>
+                  </div>
+                </template>
+                <template x-for="n in notifications" :key="n.id">
+                  <div class="border-b border-slate-50 dark:border-slate-700 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700/30" :class="!n.is_read ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''">
+                    <a :href="n.link || '#'" @click.prevent="handleClick(n)" class="block p-3 cursor-pointer">
+                      <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                             :class="{
+                               'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': n.type === 'assigned',
+                               'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400': n.type === 'edited',
+                               'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': n.type === 'deadline',
+                               'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400': n.type === 'comment',
+                               'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400': n.type === 'report' || n.type === 'role_change',
+                               'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300': n.type === 'system' || !['assigned','edited','deadline','comment','report','role_change'].includes(n.type),
+                             }">
+                          <i :data-lucide="iconFor(n.type)" class="w-4 h-4"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <p class="text-sm font-medium text-slate-900 dark:text-white truncate" x-text="n.title"></p>
+                          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2" x-show="n.body" x-text="n.body"></p>
+                          <p class="text-[10px] text-slate-400 mt-1" x-text="n.time_ago"></p>
+                        </div>
+                        <span x-show="!n.is_read" class="w-2 h-2 rounded-full bg-blue-500 mt-2 shrink-0"></span>
+                      </div>
+                    </a>
+                  </div>
+                </template>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
+    </header>
 
-        <!-- List -->
-        <div class="overflow-y-auto flex-1">
-          <template x-if="loading">
-            <div class="p-8 text-center text-sm text-slate-400">Loading...</div>
-          </template>
-          <template x-if="!loading && notifications.length === 0">
-            <div class="p-8 text-center text-slate-400">
-              <i data-lucide="bell-off" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
-              <p class="text-sm">No notifications yet</p>
-            </div>
-          </template>
-          <template x-for="n in notifications" :key="n.id">
-            <div class="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition group"
-                 :class="!n.is_read ? 'bg-blue-50/40' : ''">
-              <a :href="n.link || '#'"
-                 @click.prevent="handleClick(n)"
-                 class="block p-3 cursor-pointer">
-                <div class="flex gap-3">
-                  <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                       :class="{
-                         'bg-blue-100 text-blue-700':    n.type === 'assigned',
-                         'bg-amber-100 text-amber-700': n.type === 'edited',
-                         'bg-red-100 text-red-700':     n.type === 'deadline',
-                         'bg-purple-100 text-purple-700': n.type === 'comment',
-                         'bg-emerald-100 text-emerald-700': n.type === 'report' || n.type === 'role_change',
-                         'bg-slate-100 text-slate-700': n.type === 'system' || !['assigned','edited','deadline','comment','report','role_change'].includes(n.type),
-                       }">
-                    <i :data-lucide="iconFor(n.type)" class="w-4 h-4"></i>
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-slate-900 truncate" x-text="n.title"></p>
-                    <p class="text-xs text-slate-500 mt-0.5 line-clamp-2" x-show="n.body" x-text="n.body"></p>
-                    <p class="text-[10px] text-slate-400 mt-1" x-text="n.time_ago"></p>
-                  </div>
-                  <span x-show="!n.is_read" class="w-2 h-2 rounded-full bg-blue-500 mt-2 shrink-0"></span>
-                </div>
-              </a>
-            </div>
-          </template>
+    <!-- SEARCH PALETTE -->
+    <div x-data="searchPalette()" x-init="init()"
+         @open-search.window="openPalette()"
+         @keydown.window.cmd.k.prevent="openPalette()"
+         @keydown.window.ctrl.k.prevent="openPalette()"
+         @keydown.window.escape="open = false">
+      <div x-show="open" x-cloak x-transition
+           class="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-slate-900/40 backdrop-blur-sm"
+           @click.self="open = false">
+        <div class="w-full max-w-2xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+          <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+            <i data-lucide="search" class="w-5 h-5 text-slate-400 shrink-0"></i>
+            <input x-ref="searchInput" x-model="query" @input.debounce.200ms="runSearch()"
+                   @keydown.arrow-down.prevent="moveSelection(1)"
+                   @keydown.arrow-up.prevent="moveSelection(-1)"
+                   @keydown.enter.prevent="openSelected()"
+                   type="text" placeholder="Search projects, tasks, users, comments..."
+                   class="flex-1 outline-none text-base bg-transparent text-slate-900 dark:text-white">
+            <kbd class="px-1.5 py-0.5 text-[10px] font-mono bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-500">ESC</kbd>
+          </div>
+          <div class="max-h-[60vh] overflow-y-auto">
+            <template x-if="loading"><div class="p-6 text-center text-sm text-slate-400">Searching...</div></template>
+            <template x-if="!loading && query.length < 2">
+              <div class="p-8 text-center text-slate-400">
+                <i data-lucide="search" class="w-10 h-10 mx-auto mb-2 text-slate-300"></i>
+                <p class="text-sm">Type 2+ characters to search</p>
+              </div>
+            </template>
+            <template x-if="!loading && query.length >= 2 && results.length === 0">
+              <div class="p-8 text-center text-slate-400">
+                <i data-lucide="search-x" class="w-10 h-10 mx-auto mb-2 text-slate-300"></i>
+                <p class="text-sm">No results for "<span x-text="query"></span>"</p>
+              </div>
+            </template>
+            <template x-for="(group, gIdx) in groupedResults()" :key="group.category">
+              <div class="border-b border-slate-50 dark:border-slate-700 last:border-0">
+                <p class="px-4 py-1.5 text-[10px] uppercase tracking-wide font-semibold text-slate-400 bg-slate-50/50 dark:bg-slate-900/50" x-text="group.category"></p>
+                <template x-for="r in group.items" :key="r.type + '-' + r.id">
+                  <button @click="goTo(r)" @mouseenter="selectedIndex = flatIndex(r)"
+                          :class="flatIndex(r) === selectedIndex ? 'bg-brand-50 dark:bg-brand-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-700/30'"
+                          class="w-full px-4 py-2.5 flex items-start gap-3 text-left">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                         :class="{
+                           'bg-blue-100 text-blue-700': r.color === 'blue',
+                           'bg-purple-100 text-purple-700': r.color === 'purple',
+                           'bg-emerald-100 text-emerald-700': r.color === 'emerald',
+                           'bg-amber-100 text-amber-700': r.color === 'amber',
+                           'bg-rose-100 text-rose-700': r.color === 'rose',
+                         }">
+                      <i :data-lucide="r.icon" class="w-4 h-4"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-medium text-slate-900 dark:text-white truncate" x-text="r.title"></p>
+                      <p class="text-xs text-slate-500 dark:text-slate-400 truncate" x-text="r.snippet"></p>
+                    </div>
+                  </button>
+                </template>
+              </div>
+            </template>
+          </div>
         </div>
       </div>
     </div>
 
-    {% block content %}{% endblock %}
+    <!-- Page content -->
+    <div class="flex-1">
+      {% block content %}{% endblock %}
+    </div>
   </main>
 </div>
 {% else %}
@@ -185,85 +282,82 @@
 {% endif %}
 
 <script>
-  // Initialize icons after Lucide loads + after Alpine updates DOM
   document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
   document.addEventListener('alpine:initialized', () => lucide.createIcons());
 
-  // ============== Notification bell (used by base.html) ==============
-  function notifBell() {
+  function themeToggle() {
     return {
-      open: false,
-      loading: false,
-      notifications: [],
-      unreadCount: 0,
-      pollHandle: null,
-
-      iconFor(type) {
-        return {
-          assigned: 'user-plus',
-          edited:   'edit-3',
-          deadline: 'alarm-clock',
-          comment:  'message-circle',
-          report:   'file-text',
-          role_change: 'shield',
-          system:   'info',
-        }[type] || 'bell';
-      },
-
-      async init() {
-        await this.refreshCount();
-        // Poll every 30 seconds for new notifications
-        this.pollHandle = setInterval(() => this.refreshCount(), 30000);
-      },
-
-      async refreshCount() {
-        try {
-          const r = await fetch('/api/notifications/unread_count');
-          if (r.ok) {
-            const data = await r.json();
-            this.unreadCount = data.count || 0;
-          }
-        } catch (e) {}
-      },
-
-      async toggle() {
-        this.open = !this.open;
-        if (this.open) await this.load();
-      },
-
-      async load() {
-        this.loading = true;
-        try {
-          const r = await fetch('/api/notifications');
-          if (r.ok) this.notifications = await r.json();
-        } catch (e) {}
-        finally {
-          this.loading = false;
-          this.$nextTick(() => lucide.createIcons());
+      theme: 'auto',
+      init() {
+        this.theme = localStorage.getItem('theme') || 'auto';
+        this.apply();
+        if (window.matchMedia) {
+          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (this.theme === 'auto') this.apply();
+          });
         }
       },
+      cycleTheme() {
+        const order = ['light', 'auto', 'dark'];
+        this.theme = order[(order.indexOf(this.theme) + 1) % order.length];
+        localStorage.setItem('theme', this.theme);
+        this.apply();
+      },
+      apply() {
+        let dark;
+        if (this.theme === 'dark') dark = true;
+        else if (this.theme === 'light') dark = false;
+        else dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.toggle('dark', dark);
+        this.$nextTick(() => lucide.createIcons());
+      },
+    };
+  }
 
+  function notifBell() {
+    return {
+      open: false, loading: false, notifications: [], unreadCount: 0,
+      iconFor(t) {
+        return {assigned:'user-plus',edited:'edit-3',deadline:'alarm-clock',comment:'message-circle',report:'file-text',role_change:'shield',system:'info'}[t] || 'bell';
+      },
+      async init() { await this.refreshCount(); setInterval(() => this.refreshCount(), 30000); },
+      async refreshCount() {
+        try { const r = await fetch('/api/notifications/unread_count'); if (r.ok) this.unreadCount = (await r.json()).count || 0; } catch (e) {}
+      },
+      async toggle() { this.open = !this.open; if (this.open) await this.load(); },
+      async load() {
+        this.loading = true;
+        try { const r = await fetch('/api/notifications'); if (r.ok) this.notifications = await r.json(); } catch (e) {}
+        finally { this.loading = false; this.$nextTick(() => lucide.createIcons()); }
+      },
       async handleClick(n) {
         if (!n.is_read) {
           await fetch(`/api/notifications/${n.id}/read`, { method: 'POST' });
-          n.is_read = true;
-          this.unreadCount = Math.max(0, this.unreadCount - 1);
+          n.is_read = true; this.unreadCount = Math.max(0, this.unreadCount - 1);
         }
-        if (n.link) window.location.href = n.link;
-        else this.open = false;
+        if (n.link) window.location.href = n.link; else this.open = false;
       },
+      async markAllRead() { await fetch('/api/notifications/read_all', { method: 'POST' }); this.notifications.forEach(n => n.is_read = true); this.unreadCount = 0; },
+      async clearRead() { await fetch('/api/notifications', { method: 'DELETE' }); this.notifications = this.notifications.filter(n => !n.is_read); this.$nextTick(() => lucide.createIcons()); },
+    };
+  }
 
-      async markAllRead() {
-        await fetch('/api/notifications/read_all', { method: 'POST' });
-        this.notifications.forEach(n => { n.is_read = true; });
-        this.unreadCount = 0;
+  function searchPalette() {
+    return {
+      open: false, query: '', results: [], loading: false, selectedIndex: 0,
+      init() {},
+      openPalette() { this.open = true; this.query = ''; this.results = []; this.selectedIndex = 0; this.$nextTick(() => { this.$refs.searchInput?.focus(); lucide.createIcons(); }); },
+      async runSearch() {
+        if (this.query.trim().length < 2) { this.results = []; return; }
+        this.loading = true;
+        try { const r = await fetch('/api/search?q=' + encodeURIComponent(this.query)); if (r.ok) { this.results = (await r.json()).results || []; this.selectedIndex = 0; } } catch (e) {}
+        finally { this.loading = false; this.$nextTick(() => lucide.createIcons()); }
       },
-
-      async clearRead() {
-        await fetch('/api/notifications', { method: 'DELETE' });
-        this.notifications = this.notifications.filter(n => !n.is_read);
-        this.$nextTick(() => lucide.createIcons());
-      },
+      groupedResults() { const g = {}; for (const r of this.results) { if (!g[r.category]) g[r.category] = {category:r.category,items:[]}; g[r.category].items.push(r); } return Object.values(g); },
+      flatIndex(item) { return this.results.findIndex(r => r.type === item.type && r.id === item.id); },
+      moveSelection(d) { if (!this.results.length) return; this.selectedIndex = (this.selectedIndex + d + this.results.length) % this.results.length; },
+      openSelected() { const i = this.results[this.selectedIndex]; if (i) this.goTo(i); },
+      goTo(item) { this.open = false; if (item.link) window.location.href = item.link; },
     };
   }
 </script>

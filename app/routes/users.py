@@ -10,12 +10,14 @@ Admin-only API for managing users:
 from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel, EmailStr
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User
 from app.routes.auth import current_user, hash_password
+from app.services.audit_service import log_audit, diff_dict, snapshot_user
+from app.models.audit_log import CATEGORY_ADMIN, CATEGORY_SECURITY
 
 
 router = APIRouter(prefix="/api/users", tags=["users"])
@@ -73,7 +75,7 @@ def get_user(user_id: int, admin: User = Depends(require_admin), db: Session = D
 
 
 @router.post("", response_model=UserOut)
-def create_user(payload: UserCreate, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+def create_user(payload: UserCreate, request: Request, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
     # Duplicate email check
     if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(400, "A user with this email already exists")
@@ -92,11 +94,23 @@ def create_user(payload: UserCreate, admin: User = Depends(require_admin), db: S
     db.add(u)
     db.commit()
     db.refresh(u)
+
+    log_audit(
+        db, request=request, actor=admin,
+        action="created",
+        category=CATEGORY_ADMIN,
+        entity_type="user",
+        entity_id=u.id,
+        entity_label=u.full_name,
+        summary=f"Created user {u.full_name} ({u.email}) as {u.role}",
+        details={"after": snapshot_user(u)},
+        commit=True,
+    )
     return u
 
 
 @router.patch("/{user_id}", response_model=UserOut)
-def update_user(user_id: int, payload: UserUpdate, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+def update_user(user_id: int, payload: UserUpdate, request: Request, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
     u = db.query(User).filter(User.id == user_id).first()
     if not u:
         raise HTTPException(404, "User not found")
@@ -112,12 +126,14 @@ def update_user(user_id: int, payload: UserUpdate, admin: User = Depends(require
     if "role" in data and data["role"] not in ("admin", "employee"):
         raise HTTPException(400, "Role must be 'admin' or 'employee'")
 
-    # Password change -> hash it
+    # Password change -> hash it (audit separately)
+    password_changed = False
     if "password" in data:
         if data["password"]:
             if len(data["password"]) < 6:
                 raise HTTPException(400, "Password must be at least 6 characters")
             u.password_hash = hash_password(data["password"])
+            password_changed = True
         del data["password"]
 
     # Don't let an admin demote themselves if they're the last admin
@@ -126,16 +142,43 @@ def update_user(user_id: int, payload: UserUpdate, admin: User = Depends(require
         if admin_count <= 1:
             raise HTTPException(400, "Cannot demote yourself — you are the only admin")
 
+    # Snapshot before for diff
+    before = snapshot_user(u)
+    role_change = "role" in data and data["role"] != u.role
+
     for key, value in data.items():
         setattr(u, key, value)
 
     db.commit()
     db.refresh(u)
+
+    after = snapshot_user(u)
+    changes = diff_dict(before, after)
+
+    if changes:
+        log_audit(
+            db, request=request, actor=admin,
+            action="role_changed" if role_change else "updated",
+            category=CATEGORY_SECURITY if role_change else CATEGORY_ADMIN,
+            entity_type="user", entity_id=u.id, entity_label=u.full_name,
+            summary=("Changed role of " if role_change else "Updated user ") + f"{u.full_name}",
+            details={"before": before, "after": after, "fields_changed": list(changes.keys())},
+        )
+    if password_changed:
+        log_audit(
+            db, request=request, actor=admin,
+            action="password_changed",
+            category=CATEGORY_SECURITY,
+            entity_type="user", entity_id=u.id, entity_label=u.full_name,
+            summary=f"Admin changed password for {u.full_name}",
+            is_sensitive=True,
+        )
+    db.commit()
     return u
 
 
 @router.delete("/{user_id}")
-def delete_user(user_id: int, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
+def delete_user(user_id: int, request: Request, admin: User = Depends(require_admin), db: Session = Depends(get_db)):
     u = db.query(User).filter(User.id == user_id).first()
     if not u:
         raise HTTPException(404, "User not found")
@@ -150,6 +193,22 @@ def delete_user(user_id: int, admin: User = Depends(require_admin), db: Session 
         if admin_count <= 1:
             raise HTTPException(400, "Cannot delete the last admin")
 
+    snapshot = snapshot_user(u)
+    label = u.full_name
+    deleted_id = u.id
+
     db.delete(u)
     db.commit()
-    return {"ok": True, "deleted_id": user_id}
+
+    log_audit(
+        db, request=request, actor=admin,
+        action="deleted",
+        category=CATEGORY_ADMIN,
+        entity_type="user", entity_id=deleted_id, entity_label=label,
+        summary=f"Deleted user {label}",
+        details={"before": snapshot},
+        is_sensitive=True,
+        commit=True,
+    )
+
+    return {"ok": True, "deleted_id": deleted_id}

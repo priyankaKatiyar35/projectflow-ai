@@ -130,6 +130,11 @@
                       <i data-lucide="message-circle" class="w-3 h-3"></i>
                       <span x-show="commentCounts[t.id] > 0" x-text="commentCounts[t.id]"></span>
                     </button>
+                    <button @click="openAttachments(t)"
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 ml-1">
+                      <i data-lucide="paperclip" class="w-3 h-3"></i>
+                      <span x-show="attachmentCounts[t.id] > 0" x-text="attachmentCounts[t.id]"></span>
+                    </button>
                     {% if user.role == 'admin' %}
                     <button @click="confirmDeleteTask(t)" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-red-700 bg-red-50 hover:bg-red-100 ml-1">
                       <i data-lucide="trash-2" class="w-3 h-3"></i>
@@ -387,6 +392,97 @@
         </div>
       </div>
 
+      <!-- ============== ATTACHMENTS MODAL ============== -->
+      <div x-show="attachmentsOpen" x-cloak
+           class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+           @keydown.escape.window="attachmentsOpen = false">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl my-4 flex flex-col" style="max-height:80vh;" @click.outside="attachmentsOpen = false">
+
+          <!-- Header -->
+          <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <div>
+              <h3 class="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                <i data-lucide="paperclip" class="w-5 h-5 text-amber-500"></i>
+                Attachments
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-md" x-text="attachmentsTask?.task_description || ''"></p>
+            </div>
+            <button @click="attachmentsOpen = false" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+          </div>
+
+          <!-- Attachments list -->
+          <div class="flex-1 overflow-y-auto p-4">
+            <template x-if="attachmentsLoading">
+              <div class="text-center text-slate-400 py-8">Loading attachments...</div>
+            </template>
+            <template x-if="!attachmentsLoading && attachments.length === 0">
+              <div class="text-center text-slate-400 py-12">
+                <i data-lucide="file-plus" class="w-12 h-12 mx-auto mb-2 text-slate-300"></i>
+                <p class="text-sm">No attachments yet</p>
+                <p class="text-xs mt-1">Upload files like designs, docs, or evidence (10MB max each)</p>
+              </div>
+            </template>
+            <div class="space-y-2">
+              <template x-for="a in attachments" :key="a.id">
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/40">
+                  <!-- Thumbnail / icon -->
+                  <template x-if="a.is_image">
+                    <img :src="a.preview_url" :alt="a.original_name"
+                         class="w-12 h-12 rounded object-cover shrink-0 border border-slate-200 dark:border-slate-700">
+                  </template>
+                  <template x-if="!a.is_image">
+                    <div class="w-12 h-12 rounded bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center shrink-0">
+                      <i :data-lucide="fileIcon(a.mime_type)" class="w-6 h-6 text-amber-600 dark:text-amber-400"></i>
+                    </div>
+                  </template>
+
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-slate-900 dark:text-white truncate" x-text="a.original_name"></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      <span x-text="a.size_human"></span> · uploaded by <span x-text="a.uploader_name"></span>
+                      <span x-text="' · ' + formatDate(a.created_at)"></span>
+                    </p>
+                  </div>
+
+                  <div class="flex items-center gap-1 shrink-0">
+                    <a :href="a.download_url" :download="a.original_name" title="Download"
+                       class="p-1.5 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 rounded">
+                      <i data-lucide="download" class="w-4 h-4"></i>
+                    </a>
+                    <template x-if="canDeleteAttachment(a)">
+                      <button @click="deleteAttachment(a)" title="Delete"
+                              class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Upload form -->
+          <div class="px-4 py-3 border-t border-slate-100 dark:border-slate-700">
+            <div x-show="uploadProgress > 0 && uploadProgress < 100" class="mb-2">
+              <div class="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-brand-500 to-accent-500 transition-all" :style="`width: ${uploadProgress}%`"></div>
+              </div>
+              <p class="text-xs text-slate-500 mt-1" x-text="`Uploading... ${uploadProgress}%`"></p>
+            </div>
+
+            <label class="block">
+              <input type="file" x-ref="fileInput" @change="uploadFile($event)" class="hidden">
+              <button @click="$refs.fileInput.click()" :disabled="uploading"
+                      class="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+                <i data-lucide="upload" class="w-4 h-4"></i>
+                <span x-text="uploading ? 'Uploading...' : 'Choose file to upload'"></span>
+              </button>
+            </label>
+            <p class="text-[10px] text-slate-400 mt-1.5 text-center">Max 10MB · Most file types except .exe / .bat / .sh</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Toast -->
       <div x-show="toast.msg" x-cloak x-transition
            class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2"
@@ -443,9 +539,132 @@
       editingCommentId: null,
       editingCommentText: '',
 
+      // Attachments state
+      attachmentsOpen: false,
+      attachmentsTask: null,
+      attachments: [],
+      attachmentsLoading: false,
+      attachmentCounts: {},
+      uploading: false,
+      uploadProgress: 0,
+
       completedCount()  { return this.project?.tasks?.filter(t => t.status === 'completed').length || 0; },
       inProgressCount() { return this.project?.tasks?.filter(t => t.status === 'in_progress').length || 0; },
       delayedCount()    { return this.project?.tasks?.filter(t => t.days_delayed > 0).length || 0; },
+
+      // ============== ATTACHMENTS ==============
+      fileIcon(mime) {
+        if (!mime) return 'file';
+        if (mime.startsWith('image/')) return 'image';
+        if (mime.startsWith('video/')) return 'video';
+        if (mime.startsWith('audio/')) return 'music';
+        if (mime === 'application/pdf') return 'file-text';
+        if (mime.includes('zip') || mime.includes('archive') || mime.includes('compressed')) return 'archive';
+        if (mime.includes('word') || mime.includes('document')) return 'file-text';
+        if (mime.includes('sheet') || mime.includes('excel')) return 'table';
+        if (mime.includes('presentation') || mime.includes('powerpoint')) return 'presentation';
+        return 'file';
+      },
+
+      formatDate(iso) {
+        if (!iso) return '';
+        return new Date(iso).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'});
+      },
+
+      canDeleteAttachment(att) {
+        return IS_ADMIN || att.uploader_id === CURRENT_USER_ID;
+      },
+
+      async openAttachments(task) {
+        this.attachmentsTask = task;
+        this.attachmentsOpen = true;
+        await this.loadAttachments(task.id);
+        this.$nextTick(() => lucide.createIcons());
+      },
+
+      async loadAttachments(taskId) {
+        this.attachmentsLoading = true;
+        try {
+          const r = await fetch(`/api/tasks/${taskId}/attachments`);
+          if (r.ok) this.attachments = await r.json();
+          this.attachmentCounts[taskId] = this.attachments.length;
+        } catch (e) {
+          this.attachments = [];
+        } finally {
+          this.attachmentsLoading = false;
+          this.$nextTick(() => lucide.createIcons());
+        }
+      },
+
+      async uploadFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        if (file.size > 10 * 1024 * 1024) {
+          this.showToast('File too large (max 10MB)', 'error');
+          event.target.value = '';
+          return;
+        }
+
+        this.uploading = true;
+        this.uploadProgress = 0;
+        const fd = new FormData();
+        fd.append('file', file);
+
+        try {
+          // Use XHR for progress
+          await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.upload.onprogress = (e) => {
+              if (e.lengthComputable) this.uploadProgress = Math.round((e.loaded / e.total) * 100);
+            };
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.response);
+              else {
+                try { reject(new Error(JSON.parse(xhr.responseText).detail || 'Upload failed')); }
+                catch (e) { reject(new Error('Upload failed')); }
+              }
+            };
+            xhr.onerror = () => reject(new Error('Upload failed (network)'));
+            xhr.open('POST', `/api/tasks/${this.attachmentsTask.id}/attachments`);
+            xhr.send(fd);
+          });
+          this.showToast('File uploaded');
+          await this.loadAttachments(this.attachmentsTask.id);
+        } catch (e) {
+          this.showToast(e.message, 'error');
+        } finally {
+          this.uploading = false;
+          this.uploadProgress = 0;
+          event.target.value = '';
+        }
+      },
+
+      async deleteAttachment(att) {
+        if (!confirm(`Delete "${att.original_name}"?`)) return;
+        try {
+          const r = await fetch(`/api/attachments/${att.id}`, { method: 'DELETE' });
+          if (!r.ok) throw new Error('Delete failed');
+          this.showToast('Attachment deleted');
+          await this.loadAttachments(this.attachmentsTask.id);
+        } catch (e) {
+          this.showToast(e.message, 'error');
+        }
+      },
+
+      async loadAttachmentCounts() {
+        if (!this.project?.tasks) return;
+        // Load counts for all tasks in parallel
+        const promises = this.project.tasks.map(async (t) => {
+          try {
+            const r = await fetch(`/api/tasks/${t.id}/attachments`);
+            if (r.ok) {
+              const data = await r.json();
+              this.attachmentCounts[t.id] = data.length;
+            }
+          } catch (e) {}
+        });
+        await Promise.all(promises);
+      },
 
       async load() {
         try {
@@ -463,6 +682,7 @@
 
           // Load comment counts for each task
           await this.loadCommentCounts();
+          await this.loadAttachmentCounts();
 
           this.$nextTick(() => lucide.createIcons());
         } catch (e) {

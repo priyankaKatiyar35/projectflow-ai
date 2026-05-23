@@ -1,156 +1,185 @@
 """
 app/services/analytics.py
-Replaces every count_* / aggregation function from your PHP files.
-Each function takes a SQLAlchemy session + optional user_id and returns
-plain dicts/numbers ready for the dashboard or charts.
+Dashboard stats backed by ProjectTask (the real data model).
 """
 from datetime import datetime, date, timedelta
 from typing import Optional, Dict, List
-from sqlalchemy import func, and_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
-from app.models import User, Task, Effort
+from app.models import User, Project, ProjectTask
 
 
-# ============ Task counts (admin-wide or per-user) ============
-
-def _task_query(db: Session, user_id: Optional[int] = None):
-    q = db.query(Task)
-    if user_id:
-        q = q.filter(Task.assignee_id == user_id)
+def _scope_tasks(db: Session, user_id: Optional[int] = None):
+    q = db.query(ProjectTask)
+    if user_id is not None:
+        q = q.filter(ProjectTask.assignees.any(User.id == user_id))
     return q
 
 
-def count_tasks(db: Session, user_id: Optional[int] = None) -> int:
-    return _task_query(db, user_id).count()
-
-
-def count_by_status(db: Session, status: str, user_id: Optional[int] = None) -> int:
-    return _task_query(db, user_id).filter(Task.status == status).count()
-
-
-def count_overdue(db: Session, user_id: Optional[int] = None) -> int:
-    now = datetime.utcnow()
-    return (
-        _task_query(db, user_id)
-        .filter(Task.deadline.isnot(None), Task.deadline < now, Task.status != "completed")
-        .count()
-    )
-
-
-def count_due_today(db: Session, user_id: Optional[int] = None) -> int:
-    today_start = datetime.combine(date.today(), datetime.min.time())
-    today_end   = datetime.combine(date.today(), datetime.max.time())
-    return (
-        _task_query(db, user_id)
-        .filter(Task.deadline.between(today_start, today_end), Task.status != "completed")
-        .count()
-    )
-
-
-def count_no_deadline(db: Session, user_id: Optional[int] = None) -> int:
-    return _task_query(db, user_id).filter(Task.deadline.is_(None)).count()
-
-
-# ============ Dashboard headline numbers ============
-
 def dashboard_stats(db: Session, user_id: Optional[int] = None) -> Dict:
-    """Returns the eight numbers the cards on top of the dashboard show."""
+    today = date.today()
+    base = _scope_tasks(db, user_id)
+
+    total = base.count()
+    completed = base.filter(ProjectTask.status == "completed").count()
+    in_progress = base.filter(ProjectTask.status == "in_progress").count()
+    not_started = base.filter(or_(ProjectTask.status == "not_started", ProjectTask.status.is_(None))).count()
+    delayed = base.filter(
+        ProjectTask.status != "completed",
+        ProjectTask.planned_end_date < today,
+        ProjectTask.planned_end_date.isnot(None),
+    ).count()
+
+    rows = base.all()
+    planned_effort = sum((t.planned_effort or 0) for t in rows)
+    actual_effort  = sum((t.actual_effort or 0) for t in rows)
+
+    if user_id is None:
+        total_users = db.query(User).count()
+        total_projects = db.query(Project).count()
+    else:
+        total_users = 0
+        total_projects = (
+            db.query(Project).join(ProjectTask)
+            .filter(ProjectTask.assignees.any(User.id == user_id))
+            .distinct().count()
+        )
+
     return {
-        "users":        db.query(User).count() if user_id is None else None,
-        "total_tasks":  count_tasks(db, user_id),
-        "pending":      count_by_status(db, "pending", user_id),
-        "in_progress":  count_by_status(db, "in_progress", user_id),
-        "completed":    count_by_status(db, "completed", user_id),
-        "overdue":      count_overdue(db, user_id),
-        "due_today":    count_due_today(db, user_id),
-        "no_deadline":  count_no_deadline(db, user_id),
+        "total_tasks": total,
+        "completed_tasks": completed,
+        "in_progress_tasks": in_progress,
+        "not_started_tasks": not_started,
+        "delayed_tasks": delayed,
+        "completion_pct": round((completed / total) * 100, 1) if total else 0,
+        "planned_effort_hours": round(planned_effort, 1),
+        "actual_effort_hours": round(actual_effort, 1),
+        "effort_variance_pct": round(((actual_effort - planned_effort) / planned_effort) * 100, 1) if planned_effort else 0,
+        "total_users": total_users,
+        "total_projects": total_projects,
     }
 
 
-# ============ Chart data ============
-
-def effort_by_category(db: Session, user_id: Optional[int] = None) -> Dict[str, float]:
-    """Aggregated effort (hours) grouped by Task.task (the category)."""
-    q = (
-        db.query(Task.task, func.sum(Effort.minutes))
-        .join(Effort, Effort.task_id == Task.id)
-        .group_by(Task.task)
-    )
-    if user_id:
-        q = q.filter(Task.assignee_id == user_id)
-    return {row[0]: round((row[1] or 0) / 60, 2) for row in q.all()}
-
-
-def effort_by_subtask(db: Session, user_id: Optional[int] = None) -> Dict[str, float]:
-    """Aggregated effort (hours) grouped by Task.sub_task."""
-    q = (
-        db.query(Task.sub_task, func.sum(Effort.minutes))
-        .join(Effort, Effort.task_id == Task.id)
-        .group_by(Task.sub_task)
-    )
-    if user_id:
-        q = q.filter(Task.assignee_id == user_id)
-    return {row[0]: round((row[1] or 0) / 60, 2) for row in q.all()}
-
-
-def employee_progress(db: Session) -> Dict[str, Dict[str, int]]:
-    """For the stacked bar chart: each employee's pending/in_progress/completed counts."""
-    out: Dict[str, Dict[str, int]] = {}
-    for user in db.query(User).filter(User.role != "admin").all():
-        out[user.full_name] = {
-            "Pending":     count_by_status(db, "pending", user.id),
-            "In Progress": count_by_status(db, "in_progress", user.id),
-            "Completed":   count_by_status(db, "completed", user.id),
-        }
+def status_breakdown(db: Session, user_id: Optional[int] = None) -> List[Dict]:
+    rows = _scope_tasks(db, user_id).all()
+    counts = {}
+    for t in rows:
+        s = t.status or "not_started"
+        counts[s] = counts.get(s, 0) + 1
+    label_map = {
+        "completed":   ("Completed",   "#10b981"),
+        "in_progress": ("In progress", "#3b82f6"),
+        "not_started": ("Not started", "#94a3b8"),
+        "blocked":     ("Blocked",     "#ef4444"),
+    }
+    out = []
+    for status, count in counts.items():
+        label, color = label_map.get(status, (status, "#64748b"))
+        out.append({"status": status, "label": label, "count": count, "color": color})
     return out
 
 
-def employee_activity(db: Session) -> Dict[str, float]:
-    """Total effort (hours) logged per employee."""
-    rows = (
-        db.query(User.full_name, func.sum(Effort.minutes))
-        .join(Effort, Effort.user_id == User.id)
-        .group_by(User.full_name)
-        .all()
-    )
-    return {name: round((mins or 0) / 60, 2) for name, mins in rows}
+def productivity_trend(db: Session, user_id: Optional[int] = None, days: int = 14) -> List[Dict]:
+    today = date.today()
+    start = today - timedelta(days=days - 1)
+    rows = _scope_tasks(db, user_id).filter(
+        ProjectTask.actual_end_date >= start,
+        ProjectTask.actual_end_date <= today,
+        ProjectTask.status == "completed",
+    ).all()
 
+    counts_by_day = {}
+    for t in rows:
+        if t.actual_end_date:
+            counts_by_day[t.actual_end_date] = counts_by_day.get(t.actual_end_date, 0) + 1
 
-def productivity_trend(db: Session, user_id: Optional[int] = None, days: int = 14) -> Dict:
-    """Hours logged per day for the last `days` days — drives the line chart."""
-    start = date.today() - timedelta(days=days - 1)
-    q = db.query(Effort.log_date, func.sum(Effort.minutes)).filter(Effort.log_date >= start)
-    if user_id:
-        q = q.filter(Effort.user_id == user_id)
-    rows = dict(q.group_by(Effort.log_date).all())
-
-    labels, values = [], []
+    series = []
     for i in range(days):
         d = start + timedelta(days=i)
-        labels.append(d.strftime("%b %d"))
-        values.append(round((rows.get(d, 0) or 0) / 60, 2))
-    return {"labels": labels, "values": values}
+        series.append({
+            "date": d.isoformat(),
+            "label": d.strftime("%b %d"),
+            "completed": counts_by_day.get(d, 0),
+        })
+    return series
 
 
-def online_presence(db: Session) -> Dict[str, str]:
-    """Human-readable 'last seen' string per user (mirrors your PHP block)."""
-    out = {}
+def effort_by_category(db: Session, user_id: Optional[int] = None) -> List[Dict]:
+    rows = _scope_tasks(db, user_id).all()
+    by_cat = {}
+    for t in rows:
+        cat = t.category or "Uncategorized"
+        if cat not in by_cat:
+            by_cat[cat] = {"actual": 0, "planned": 0}
+        by_cat[cat]["actual"] += (t.actual_effort or 0)
+        by_cat[cat]["planned"] += (t.planned_effort or 0)
+    return [
+        {"category": cat, "actual_hours": round(v["actual"], 1), "planned_hours": round(v["planned"], 1)}
+        for cat, v in by_cat.items()
+    ]
+
+
+def employee_activity(db: Session) -> List[Dict]:
+    users = db.query(User).filter(User.role == "employee").all()
     now = datetime.utcnow()
-    for u in db.query(User).all():
-        if not u.last_online:
-            continue
-        diff = now - u.last_online
-        mins = diff.total_seconds() / 60
-        if mins < 5:
-            label = "Just now"
-        elif mins < 60:
-            label = f"{int(mins)} minutes ago"
-        elif diff.days == 0:
-            label = "Today at " + u.last_online.strftime("%I:%M %p").lstrip("0")
-        elif diff.days == 1:
-            label = "Yesterday at " + u.last_online.strftime("%I:%M %p").lstrip("0")
-        else:
-            label = u.last_online.strftime("%b %d at %I:%M %p").replace(" 0", " ")
-        out[u.full_name] = label
+    out = []
+    for u in users:
+        assigned = db.query(ProjectTask).filter(ProjectTask.assignees.any(User.id == u.id)).count()
+        in_progress = db.query(ProjectTask).filter(
+            ProjectTask.assignees.any(User.id == u.id),
+            ProjectTask.status == "in_progress",
+        ).count()
+        done_recent = db.query(ProjectTask).filter(
+            ProjectTask.assignees.any(User.id == u.id),
+            ProjectTask.status == "completed",
+            ProjectTask.actual_end_date >= (date.today() - timedelta(days=7)),
+        ).count()
+        is_online = False
+        minutes_ago = None
+        if u.last_online:
+            delta = now - u.last_online
+            minutes_ago = int(delta.total_seconds() // 60)
+            is_online = minutes_ago < 15
+        out.append({
+            "id": u.id, "name": u.full_name, "email": u.email,
+            "is_online": is_online, "minutes_ago": minutes_ago,
+            "assigned_count": assigned, "in_progress_count": in_progress,
+            "completed_last_7d": done_recent,
+        })
     return out
+
+
+def employee_progress(db: Session) -> List[Dict]:
+    users = db.query(User).filter(User.role == "employee").all()
+    out = []
+    for u in users:
+        total = db.query(ProjectTask).filter(ProjectTask.assignees.any(User.id == u.id)).count()
+        done  = db.query(ProjectTask).filter(
+            ProjectTask.assignees.any(User.id == u.id),
+            ProjectTask.status == "completed",
+        ).count()
+        out.append({
+            "id": u.id, "name": u.full_name,
+            "completed": done, "total": total,
+            "pct": round((done / total) * 100, 1) if total else 0,
+        })
+    out.sort(key=lambda x: -x["pct"])
+    return out
+
+
+def recent_activity(db: Session, limit: int = 10) -> List[Dict]:
+    rows = db.query(ProjectTask).order_by(ProjectTask.id.desc()).limit(limit).all()
+    return [
+        {
+            "id": t.id,
+            "task_description": t.task_description,
+            "project_name": t.project.name if t.project else "(no project)",
+            "project_id": t.project_id,
+            "status": t.status,
+            "assignees": [a.full_name for a in t.assignees],
+            "due_date": t.planned_end_date.isoformat() if t.planned_end_date else None,
+            "is_overdue": (t.planned_end_date and t.planned_end_date < date.today() and t.status != "completed"),
+        }
+        for t in rows
+    ]

@@ -9,13 +9,14 @@ Employee:    can list projects assigned to them; can ONLY update
 from typing import List, Optional
 from datetime import date, datetime
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
 from app.database import get_db
 from app.models import Project, ProjectTask, User
 from app.routes.auth import current_user
+from app.services.audit_service import log_audit, diff_dict, snapshot_project, snapshot_project_task
 
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
@@ -116,13 +117,21 @@ def list_projects(user: User = Depends(current_user), db: Session = Depends(get_
 
 
 @router.post("")
-def create_project(payload: ProjectIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def create_project(payload: ProjectIn, request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
     if user.role != "admin":
         raise HTTPException(403, "Only admins can create projects")
     p = Project(name=payload.name, description=payload.description, status=payload.status or "not_started", created_by=user.id)
     db.add(p)
     db.commit()
     db.refresh(p)
+
+    log_audit(
+        db, request=request, actor=user,
+        action="created", entity_type="project", entity_id=p.id, entity_label=p.name,
+        summary=f"Created project '{p.name}'",
+        details={"after": snapshot_project(p)},
+        commit=True,
+    )
     return _project_dict(p)
 
 
@@ -146,35 +155,58 @@ def get_project(project_id: int, user: User = Depends(current_user), db: Session
 
 
 @router.patch("/{project_id}")
-def update_project(project_id: int, payload: ProjectIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def update_project(project_id: int, payload: ProjectIn, request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
     if user.role != "admin":
         raise HTTPException(403, "Only admins can edit projects")
     p = db.query(Project).filter(Project.id == project_id).first()
     if not p:
         raise HTTPException(404, "Project not found")
+    before = snapshot_project(p)
     for k, v in payload.model_dump(exclude_unset=True).items():
         setattr(p, k, v)
     db.commit()
     db.refresh(p)
+    after = snapshot_project(p)
+    changes = diff_dict(before, after)
+    if changes:
+        log_audit(
+            db, request=request, actor=user,
+            action="updated", entity_type="project", entity_id=p.id, entity_label=p.name,
+            summary=f"Updated project '{p.name}' ({', '.join(changes.keys())})",
+            details={"before": before, "after": after, "fields_changed": list(changes.keys())},
+            commit=True,
+        )
     return _project_dict(p)
 
 
 @router.delete("/{project_id}")
-def delete_project(project_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def delete_project(project_id: int, request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
     if user.role != "admin":
         raise HTTPException(403, "Only admins can delete projects")
     p = db.query(Project).filter(Project.id == project_id).first()
     if not p:
         raise HTTPException(404, "Project not found")
+
+    snapshot = snapshot_project(p)
+    label = p.name
+    pid = p.id
     db.delete(p)
     db.commit()
+    log_audit(
+        db, request=request, actor=user,
+        action="deleted", entity_type="project", entity_id=pid, entity_label=label,
+        summary=f"Deleted project '{label}'",
+        details={"before": snapshot},
+        is_sensitive=True,
+        commit=True,
+    )
     return {"ok": True, "deleted_id": project_id}
 
 
 # ============ Project Tasks ============
 
 @router.post("/{project_id}/tasks")
-def create_task(project_id: int, payload: ProjectTaskIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def create_task(project_id: int, payload: ProjectTaskIn, request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
     if user.role != "admin":
         raise HTTPException(403, "Only admins can create project tasks")
     p = db.query(Project).filter(Project.id == project_id).first()
@@ -202,11 +234,20 @@ def create_task(project_id: int, payload: ProjectTaskIn, user: User = Depends(cu
         )
         db.commit()
 
+    log_audit(
+        db, request=request, actor=user,
+        action="created", entity_type="project_task", entity_id=t.id,
+        entity_label=t.task_description or f"Task #{t.id}",
+        summary=f"Created task '{t.task_description}' in project '{p.name}'",
+        details={"after": snapshot_project_task(t)},
+        commit=True,
+    )
+
     return _task_dict(t)
 
 
 @router.patch("/tasks/{task_id}")
-def update_task(task_id: int, payload: dict, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def update_task(task_id: int, payload: dict, request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
     """
     Admin: can update any field. Body matches ProjectTaskIn (plus assignee_ids).
     Employee: only allowed to set actual_start_date, actual_end_date, actual_effort, status, remarks.
@@ -217,6 +258,7 @@ def update_task(task_id: int, payload: dict, user: User = Depends(current_user),
 
     # Snapshot old assignees for notification logic
     old_assignee_ids = {a.id for a in t.assignees}
+    before = snapshot_project_task(t)
 
     if user.role == "admin":
         # Allow all fields
@@ -238,6 +280,7 @@ def update_task(task_id: int, payload: dict, user: User = Depends(current_user),
         if user.id not in [a.id for a in t.assignees]:
             raise HTTPException(403, "Not assigned to this task")
         allowed = {"actual_start_date", "actual_end_date", "actual_effort", "status", "remarks"}
+        was_status = t.status
         for k, v in payload.items():
             if k in allowed:
                 if k.endswith("_date") and isinstance(v, str):
@@ -245,8 +288,42 @@ def update_task(task_id: int, payload: dict, user: User = Depends(current_user),
                     except: v = None
                 setattr(t, k, v)
 
+        # If employee changed status — notify all admins
+        if "status" in payload and payload["status"] != was_status:
+            from app.routes.notifications import notify_many
+            from app.models import User as UserModel
+            admin_ids = [a.id for a in db.query(UserModel).filter(UserModel.role == "admin").all() if a.id != user.id]
+            if admin_ids:
+                status_emoji = {"completed": "✅", "in_progress": "🔄", "blocked": "🚧", "not_started": "⏸️"}.get(payload["status"], "📋")
+                notify_many(
+                    db, user_ids=admin_ids,
+                    title=f"{status_emoji} {user.full_name} marked task as {payload['status'].replace('_',' ')}",
+                    body=f"Task: {(t.task_description or '')[:80]}",
+                    type="edited",
+                    link=f"/projects/{t.project_id}",
+                )
+
     db.commit()
     db.refresh(t)
+    after = snapshot_project_task(t)
+    changes = diff_dict(before, after)
+
+    # Determine audit action based on what changed
+    audit_action = "updated"
+    if list(changes.keys()) == ["status"]:
+        audit_action = "status_changed"
+    elif list(changes.keys()) == ["assignee_ids"]:
+        audit_action = "reassigned"
+
+    if changes:
+        log_audit(
+            db, request=request, actor=user,
+            action=audit_action,
+            entity_type="project_task", entity_id=t.id,
+            entity_label=t.task_description or f"Task #{t.id}",
+            summary=f"Updated task '{(t.task_description or '')[:40]}' ({', '.join(changes.keys())})",
+            details={"before": before, "after": after, "fields_changed": list(changes.keys())},
+        )
 
     # ----- Notifications -----
     from app.routes.notifications import notify_many
@@ -282,12 +359,23 @@ def update_task(task_id: int, payload: dict, user: User = Depends(current_user),
 
 
 @router.delete("/tasks/{task_id}")
-def delete_task(task_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def delete_task(task_id: int, request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
     if user.role != "admin":
         raise HTTPException(403, "Only admins can delete tasks")
     t = db.query(ProjectTask).filter(ProjectTask.id == task_id).first()
     if not t:
         raise HTTPException(404, "Task not found")
+    snapshot = snapshot_project_task(t)
+    label = t.task_description or f"Task #{t.id}"
+    tid = t.id
     db.delete(t)
     db.commit()
+    log_audit(
+        db, request=request, actor=user,
+        action="deleted", entity_type="project_task", entity_id=tid, entity_label=label,
+        summary=f"Deleted task '{label}'",
+        details={"before": snapshot},
+        is_sensitive=True,
+        commit=True,
+    )
     return {"ok": True, "deleted_id": task_id}

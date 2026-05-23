@@ -48,51 +48,10 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     user = current_user_or_redirect(request, db)
     if not user:
         return RedirectResponse(url="/login", status_code=303)
-
-    is_admin = user.role == "admin"
-    uid = None if is_admin else user.id
-
-    stats = analytics.dashboard_stats(db, uid)
-    trend = analytics.productivity_trend(db, uid, 14)
-    cat   = analytics.effort_by_category(db, uid)
-    sub   = analytics.effort_by_subtask(db, uid)
-    online = analytics.online_presence(db) if is_admin else {}
-    emp_prog   = analytics.employee_progress(db) if is_admin else {}
-    emp_act    = analytics.employee_activity(db) if is_admin else {}
-
-    # AI insights inline (cheap rule-based ones - won't block on API)
-    ai_insights = []
-    if is_admin:
-        ai_insights += ai_service.detect_workload_issues(emp_act)
-    # Status sanity insight (works for both roles)
-    if stats["overdue"] > 0:
-        ai_insights.append({
-            "type": "danger",
-            "title": "Overdue tasks need attention",
-            "body": f"{stats['overdue']} task(s) are past their deadline."
-        })
-    if stats["completed"] > 0 and (stats["pending"] + stats["in_progress"] + stats["completed"]) > 0:
-        total = stats["pending"] + stats["in_progress"] + stats["completed"]
-        rate = round((stats["completed"] / total) * 100)
-        if rate >= 60:
-            ai_insights.append({
-                "type": "success",
-                "title": "Healthy completion rate",
-                "body": f"{rate}% of tasks are complete — strong momentum."
-            })
-
+    # New dashboard fetches all data via /api/ai/dashboard
     return templates.TemplateResponse(request, "dashboard.html", {
         "user": user,
-        "is_admin": is_admin,
-        "stats": stats,
-        "project_stats": _project_stats(db, user),
-        "trend": trend,
-        "effort_by_category": cat,
-        "effort_by_subtask": sub,
-        "online_presence": online,
-        "employee_progress": emp_prog,
-        "employee_activity": emp_act,
-        "ai_insights": ai_insights,
+        "is_admin": user.role == "admin",
     })
 
 
@@ -138,3 +97,12 @@ def admin_users_page(request: Request, db: Session = Depends(get_db)):
         # Non-admins get bounced back to dashboard
         return RedirectResponse(url="/", status_code=303)
     return templates.TemplateResponse(request, "admin_users.html", {"user": user})
+
+
+@router.get("/okrs", response_class=HTMLResponse)
+def okrs_page(request: Request, db: Session = Depends(get_db)):
+    """Goals & OKRs page — visible to all logged-in users."""
+    user = current_user_or_redirect(request, db)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    return templates.TemplateResponse(request, "okrs.html", {"user": user})
