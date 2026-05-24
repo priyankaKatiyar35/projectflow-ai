@@ -18,6 +18,24 @@
     [x-cloak] { display: none !important; }
   </style>
 
+  <!-- ============ PWA SUPPORT ============ -->
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#667eea">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Timesheet AI">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
+
+  <!-- iOS app icons -->
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/static/icons/icon-152.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/static/icons/icon-192.png">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -67,6 +85,15 @@
       </a>
       <a href="/tasks" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition {% if request.url.path == '/tasks' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-sm{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
         <i data-lucide="check-square" class="w-4 h-4"></i> Tasks
+      </a>
+      <a href="/kanban" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition {% if request.url.path == '/kanban' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-sm{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+        <i data-lucide="layout-grid" class="w-4 h-4"></i> Kanban Board
+      </a>
+      <a href="/calendar" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition {% if request.url.path == '/calendar' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-sm{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+        <i data-lucide="calendar" class="w-4 h-4"></i> Calendar
+      </a>
+      <a href="/gantt" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition {% if request.url.path == '/gantt' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-sm{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
+        <i data-lucide="bar-chart-horizontal" class="w-4 h-4"></i> Gantt Chart
       </a>
       <a href="/okrs" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition {% if request.url.path == '/okrs' %}bg-gradient-to-r from-brand-500 to-accent-500 text-white shadow-sm{% else %}text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800{% endif %}">
         <i data-lucide="target" class="w-4 h-4"></i> Goals &amp; OKRs
@@ -320,9 +347,36 @@
       iconFor(t) {
         return {assigned:'user-plus',edited:'edit-3',deadline:'alarm-clock',comment:'message-circle',report:'file-text',role_change:'shield',system:'info'}[t] || 'bell';
       },
-      async init() { await this.refreshCount(); setInterval(() => this.refreshCount(), 30000); },
+      async init() {
+        await this.refreshCount();
+        // Reduced polling - WS will push live updates; this is just safety net
+        setInterval(() => this.refreshCount(), 120000);  // every 2 min, not 30s
+
+        // Listen for live notifications pushed via WebSocket
+        window.addEventListener('ws-notification', (e) => {
+          this.unreadCount += 1;
+          // If dropdown is open, reload the list
+          if (this.open) this.load();
+          // Show toast
+          this.showToast(e.detail.title);
+        });
+      },
+      showToast(title) {
+        // Create a toast element
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-16 right-6 z-50 px-4 py-3 rounded-lg shadow-xl bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-medium flex items-center gap-2 max-w-sm';
+        toast.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/></svg><span>${title}</span>`;
+        document.body.appendChild(toast);
+        toast.animate([{opacity: 0, transform: 'translateY(-20px)'}, {opacity: 1, transform: 'translateY(0)'}], {duration: 200});
+        setTimeout(() => {
+          toast.animate([{opacity: 1}, {opacity: 0}], {duration: 300}).onfinish = () => toast.remove();
+        }, 4000);
+      },
       async refreshCount() {
-        try { const r = await fetch('/api/notifications/unread_count'); if (r.ok) this.unreadCount = (await r.json()).count || 0; } catch (e) {}
+        try {
+          const r = await fetch('/api/notifications/unread_count');
+          if (r.ok) this.unreadCount = (await r.json()).count || 0;
+        } catch (e) {}
       },
       async toggle() { this.open = !this.open; if (this.open) await this.load(); },
       async load() {
@@ -361,6 +415,220 @@
     };
   }
 </script>
+
+<!-- ============ PWA INSTALL PROMPT ============ -->
+{% if user %}
+<div x-data="pwaInstall()" x-init="init()" x-show="showBanner" x-cloak x-transition
+     class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[calc(100%-32px)] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4">
+  <div class="flex items-start gap-3">
+    <img src="/static/icons/icon-96.png" alt="App icon" class="w-12 h-12 rounded-xl shrink-0">
+    <div class="flex-1 min-w-0">
+      <p class="text-sm font-semibold text-slate-900 dark:text-white">Install Timesheet AI</p>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Quick access from your home screen, even offline.</p>
+      <div class="flex gap-2 mt-3">
+        <button @click="install()" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white text-xs font-semibold">
+          Install
+        </button>
+        <button @click="dismiss()" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium">
+          Not now
+        </button>
+      </div>
+    </div>
+    <button @click="dismiss()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white shrink-0">
+      <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+  </div>
+</div>
+{% endif %}
+
+<script>
+  // ============ Service worker registration ============
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then((reg) => {
+          console.log('[PWA] Service worker registered, scope:', reg.scope);
+        })
+        .catch((err) => {
+          console.warn('[PWA] Service worker registration failed:', err);
+        });
+    });
+  }
+
+  // ============ Install prompt logic ============
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault();
+    deferredPrompt = e;
+    // Notify any Alpine components listening
+    window.dispatchEvent(new CustomEvent('pwa-installable'));
+  });
+
+  window.addEventListener('appinstalled', () => {
+    console.log('[PWA] App installed');
+    deferredPrompt = null;
+    localStorage.setItem('pwa-installed', 'true');
+    window.dispatchEvent(new CustomEvent('pwa-installed'));
+  });
+
+  function pwaInstall() {
+    return {
+      showBanner: false,
+      init() {
+        // Don't show if already installed or dismissed recently
+        const dismissed = localStorage.getItem('pwa-dismissed');
+        const installed = localStorage.getItem('pwa-installed');
+        if (installed === 'true') return;
+        if (dismissed) {
+          const days = (Date.now() - parseInt(dismissed)) / (1000 * 60 * 60 * 24);
+          if (days < 7) return;  // Don't ask again for 7 days
+        }
+
+        // Show only if browser supports install prompt
+        window.addEventListener('pwa-installable', () => {
+          this.showBanner = true;
+          this.$nextTick(() => lucide.createIcons());
+        });
+        // If event already fired before we listened
+        if (deferredPrompt) {
+          this.showBanner = true;
+          this.$nextTick(() => lucide.createIcons());
+        }
+
+        // Detect iOS Safari (no beforeinstallprompt support, must show manual instructions)
+        const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        if (isIos && !isStandalone && !installed && !dismissed) {
+          // Show after a brief delay
+          setTimeout(() => {
+            this.showBanner = true;
+            this.$nextTick(() => lucide.createIcons());
+          }, 3000);
+        }
+      },
+      async install() {
+        if (!deferredPrompt) {
+          // iOS: show instructions
+          alert("To install on iOS:\n\n1. Tap the Share button (square with arrow)\n2. Scroll down and tap 'Add to Home Screen'\n3. Tap 'Add'");
+          this.dismiss();
+          return;
+        }
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('[PWA] Install choice:', outcome);
+        deferredPrompt = null;
+        this.showBanner = false;
+      },
+      dismiss() {
+        this.showBanner = false;
+        localStorage.setItem('pwa-dismissed', String(Date.now()));
+      },
+    };
+  }
+</script>
+
+{% if user %}
+<script>
+  // ============ WEBSOCKET CLIENT (real-time updates) ============
+  (function() {
+    let ws = null;
+    let reconnectAttempts = 0;
+    let pingInterval = null;
+    let intentionallyClosed = false;
+
+    function getWsUrl() {
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${proto}//${location.host}/ws`;
+    }
+
+    function connect() {
+      try {
+        ws = new WebSocket(getWsUrl());
+      } catch (e) {
+        scheduleReconnect();
+        return;
+      }
+
+      ws.onopen = () => {
+        console.log('[WS] Connected');
+        reconnectAttempts = 0;
+        // Heartbeat every 30s to keep alive through proxies
+        clearInterval(pingInterval);
+        pingInterval = setInterval(() => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({type: 'ping'}));
+          }
+        }, 30000);
+        // Notify any components waiting
+        window.dispatchEvent(new CustomEvent('ws-connected'));
+      };
+
+      ws.onmessage = (event) => {
+        let msg;
+        try { msg = JSON.parse(event.data); } catch (e) { return; }
+
+        switch (msg.type) {
+          case 'connected':
+            console.log('[WS] Authenticated, online users:', msg.data.online_user_ids);
+            window.dispatchEvent(new CustomEvent('ws-presence', { detail: msg.data }));
+            break;
+          case 'notification':
+            console.log('[WS] New notification:', msg.data);
+            window.dispatchEvent(new CustomEvent('ws-notification', { detail: msg.data }));
+            break;
+          case 'task_updated':
+            console.log('[WS] Task updated:', msg.data);
+            window.dispatchEvent(new CustomEvent('ws-task-updated', { detail: msg.data }));
+            break;
+          case 'task_assigned':
+            console.log('[WS] Task assigned:', msg.data);
+            window.dispatchEvent(new CustomEvent('ws-task-assigned', { detail: msg.data }));
+            break;
+          case 'presence':
+            window.dispatchEvent(new CustomEvent('ws-presence', { detail: msg.data }));
+            break;
+          case 'pong':
+            // heartbeat ack
+            break;
+        }
+      };
+
+      ws.onclose = (e) => {
+        console.log('[WS] Disconnected, code:', e.code);
+        clearInterval(pingInterval);
+        if (!intentionallyClosed) {
+          scheduleReconnect();
+        }
+      };
+
+      ws.onerror = (e) => {
+        console.warn('[WS] Error', e);
+      };
+    }
+
+    function scheduleReconnect() {
+      // Exponential backoff: 1s, 2s, 4s, 8s, 16s, capped at 30s
+      reconnectAttempts++;
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 30000);
+      console.log(`[WS] Reconnecting in ${delay}ms (attempt ${reconnectAttempts})`);
+      setTimeout(connect, delay);
+    }
+
+    // Connect on page load
+    connect();
+
+    // Clean disconnect on page unload (so server knows we're gone)
+    window.addEventListener('beforeunload', () => {
+      intentionallyClosed = true;
+      if (ws) ws.close();
+    });
+
+    // Expose for debugging
+    window.__ws = () => ws;
+  })();
+</script>
+{% endif %}
 
 {% block scripts %}{% endblock %}
 </body>

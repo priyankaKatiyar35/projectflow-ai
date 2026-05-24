@@ -178,6 +178,18 @@ def notify(
     )
     db.add(n)
 
+    # ----- Push real-time via WebSocket (if user is online) -----
+    try:
+        from app.routes.websocket import push_notification_sync
+        push_notification_sync(user_id, {
+            "type": type,
+            "title": title,
+            "body": body,
+            "link": link,
+        })
+    except Exception as e:
+        print(f"[notify] WebSocket push failed: {e}")
+
     # ----- Send email if user wants it for this type -----
     if send_email:
         try:

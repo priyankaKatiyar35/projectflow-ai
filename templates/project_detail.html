@@ -5,27 +5,22 @@
 <div class="p-6 lg:p-8 max-w-7xl mx-auto" x-data="projectDetailApp({{ project_id }})" x-init="load()">
 
   <!-- Back link -->
-  <a href="/projects" class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-3">
+  <a href="/projects" class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-300 mb-3">
     <i data-lucide="arrow-left" class="w-4 h-4"></i> All projects
   </a>
 
   <template x-if="project">
     <div>
       <!-- Project header -->
-      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-5">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 mb-5">
         <div class="flex justify-between items-start gap-4 flex-wrap">
           <div class="flex-1">
             <div class="flex items-center gap-3 mb-1">
-              <h1 class="text-2xl font-bold text-slate-900" x-text="project.name"></h1>
+              <h1 class="text-2xl font-bold text-slate-900 dark:text-white" x-text="project.name"></h1>
               <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] uppercase font-semibold"
-                    :class="{
-                      'bg-emerald-100 text-emerald-700': project.status === 'completed',
-                      'bg-amber-100 text-amber-700':     project.status === 'in_progress',
-                      'bg-slate-100 text-slate-600':     project.status === 'not_started',
-                      'bg-blue-100 text-blue-700':       project.status === 'on_hold',
-                    }" x-text="project.status.replace('_', ' ')"></span>
+                    :class="{ 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': project.status === 'completed', 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400': 'in_progress', 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 dark:text-slate-500': 'not_started', 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': 'on_hold', }" x-text="project.status.replace('_', ' ')"></span>
             </div>
-            <p class="text-sm text-slate-500" x-text="project.description || 'No description'"></p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500" x-text="project.description || 'No description'"></p>
           </div>
           {% if user.role == 'admin' %}
           <button @click="openAddTask()"
@@ -37,34 +32,34 @@
 
         <!-- Mini stats -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
-          <div class="bg-slate-50 rounded-lg p-3">
-            <p class="text-[10px] uppercase font-semibold text-slate-500">Total tasks</p>
+          <div class="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3">
+            <p class="text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500">Total tasks</p>
             <p class="text-xl font-bold mt-0.5" x-text="project.tasks ? project.tasks.length : 0"></p>
           </div>
-          <div class="bg-emerald-50 rounded-lg p-3">
-            <p class="text-[10px] uppercase font-semibold text-emerald-700">Completed</p>
-            <p class="text-xl font-bold text-emerald-700 mt-0.5" x-text="completedCount()"></p>
+          <div class="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3">
+            <p class="text-[10px] uppercase font-semibold text-emerald-700 dark:text-emerald-400">Completed</p>
+            <p class="text-xl font-bold text-emerald-700 dark:text-emerald-400 mt-0.5" x-text="completedCount()"></p>
           </div>
-          <div class="bg-amber-50 rounded-lg p-3">
-            <p class="text-[10px] uppercase font-semibold text-amber-700">In progress</p>
-            <p class="text-xl font-bold text-amber-700 mt-0.5" x-text="inProgressCount()"></p>
+          <div class="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3">
+            <p class="text-[10px] uppercase font-semibold text-amber-700 dark:text-amber-400">In progress</p>
+            <p class="text-xl font-bold text-amber-700 dark:text-amber-400 mt-0.5" x-text="inProgressCount()"></p>
           </div>
-          <div class="bg-red-50 rounded-lg p-3">
-            <p class="text-[10px] uppercase font-semibold text-red-700">Delayed</p>
-            <p class="text-xl font-bold text-red-700 mt-0.5" x-text="delayedCount()"></p>
+          <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+            <p class="text-[10px] uppercase font-semibold text-red-700 dark:text-red-400">Delayed</p>
+            <p class="text-xl font-bold text-red-700 dark:text-red-400 mt-0.5" x-text="delayedCount()"></p>
           </div>
         </div>
       </div>
 
       <!-- Tasks table -->
-      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <div class="px-5 py-3 border-b border-slate-100 flex justify-between items-center">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
           <h2 class="font-semibold flex items-center gap-2"><i data-lucide="list" class="w-4 h-4 text-brand-500"></i> Tasks</h2>
         </div>
 
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-[11px] uppercase text-slate-500">
+            <thead class="bg-slate-50 dark:bg-slate-900/50 text-[11px] uppercase text-slate-500 dark:text-slate-400 dark:text-slate-500">
               <tr>
                 <th class="px-3 py-2 text-left">Phase</th>
                 <th class="px-3 py-2 text-left">Category</th>
@@ -78,14 +73,14 @@
                 <th class="px-3 py-2 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100">
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
               <template x-for="t in project.tasks" :key="t.id">
-                <tr class="hover:bg-slate-50">
+                <tr class="hover:bg-slate-50 dark:bg-slate-900/50">
                   <td class="px-3 py-2.5 text-xs" x-text="t.milestone_phase || '—'"></td>
                   <td class="px-3 py-2.5 text-xs" x-text="t.category || '—'"></td>
                   <td class="px-3 py-2.5">
-                    <p class="font-medium text-slate-800 text-sm" x-text="t.task_description"></p>
-                    <p class="text-[11px] text-slate-500 mt-0.5" x-show="t.action_item">
+                    <p class="font-medium text-slate-800 dark:text-slate-200 text-sm" x-text="t.task_description"></p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5" x-show="t.action_item">
                       <span class="font-semibold">Action:</span> <span x-text="t.action_item"></span>
                     </p>
                   </td>
@@ -98,27 +93,22 @@
                   </td>
                   <td class="px-3 py-2.5 text-xs">
                     <p x-text="t.planned_start_date || '—'"></p>
-                    <p x-text="t.planned_end_date || '—'" class="text-slate-500"></p>
+                    <p x-text="t.planned_end_date || '—'" class="text-slate-500 dark:text-slate-400 dark:text-slate-500"></p>
                   </td>
                   <td class="px-3 py-2.5 text-xs">
-                    <p x-text="t.actual_start_date || '—'" :class="t.actual_start_date ? '' : 'text-slate-400'"></p>
-                    <p x-text="t.actual_end_date || '—'" :class="t.actual_end_date ? 'text-slate-500' : 'text-slate-400'"></p>
+                    <p x-text="t.actual_start_date || '—'" :class="t.actual_start_date ? '' : 'text-slate-400 dark:text-slate-500'"></p>
+                    <p x-text="t.actual_end_date || '—'" :class="t.actual_end_date ? 'text-slate-500 dark:text-slate-400 dark:text-slate-500' : 'text-slate-400"></p>
                   </td>
                   <td class="px-3 py-2.5 text-xs text-right" x-text="t.planned_effort.toFixed(1)"></td>
                   <td class="px-3 py-2.5 text-xs text-right">
                     <span x-text="t.actual_effort.toFixed(1)"
-                          :class="t.effort_variance_pct > 20 ? 'text-red-700 font-semibold' : (t.effort_variance_pct < -20 ? 'text-emerald-700 font-semibold' : '')"></span>
-                    <span class="text-[10px] text-slate-400 block" x-show="t.planned_effort > 0" x-text="(t.effort_variance_pct > 0 ? '+' : '') + t.effort_variance_pct + '%'"></span>
+                          :class="t.effort_variance_pct > 20 ? 'text-red-700 font-semibold' : (t.effort_variance_pct < -20 'text-emerald-700 dark:text-emerald-400 '')"></span>
+                    <span class="text-[10px] text-slate-400 dark:text-slate-500 block" x-show="t.planned_effort > 0" x-text="(t.effort_variance_pct > 0 ? '+' : '') + t.effort_variance_pct + '%'"></span>
                   </td>
                   <td class="px-3 py-2.5 text-center">
                     <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] uppercase font-semibold"
-                          :class="{
-                            'bg-emerald-100 text-emerald-700': t.status === 'completed',
-                            'bg-amber-100 text-amber-700':     t.status === 'in_progress',
-                            'bg-slate-100 text-slate-600':     t.status === 'not_started',
-                            'bg-blue-100 text-blue-700':       t.status === 'on_hold',
-                          }" x-text="t.status.replace('_', ' ')"></span>
-                    <span x-show="t.days_delayed > 0" class="text-[10px] text-red-600 block mt-1" x-text="t.days_delayed + 'd late'"></span>
+                          :class="{ 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': t.status === 'completed', 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400': 'in_progress', 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 dark:text-slate-500': 'not_started', 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': 'on_hold', }" x-text="t.status.replace('_', ' ')"></span>
+                    <span x-show="t.days_delayed > 0" class="text-[10px] text-red-600 dark:text-red-400 block mt-1" x-text="t.days_delayed + 'd late'"></span>
                   </td>
                   <td class="px-3 py-2.5 text-right whitespace-nowrap">
                     <button @click="openEditTask(t)" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-brand-700 bg-brand-50 hover:bg-brand-100">
@@ -126,17 +116,17 @@
                       <span x-text="IS_ADMIN ? 'Edit' : 'Update'"></span>
                     </button>
                     <button @click="openComments(t)"
-                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 ml-1">
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/30 ml-1">
                       <i data-lucide="message-circle" class="w-3 h-3"></i>
                       <span x-show="commentCounts[t.id] > 0" x-text="commentCounts[t.id]"></span>
                     </button>
                     <button @click="openAttachments(t)"
-                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 ml-1">
+                            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/30 ml-1">
                       <i data-lucide="paperclip" class="w-3 h-3"></i>
                       <span x-show="attachmentCounts[t.id] > 0" x-text="attachmentCounts[t.id]"></span>
                     </button>
                     {% if user.role == 'admin' %}
-                    <button @click="confirmDeleteTask(t)" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-red-700 bg-red-50 hover:bg-red-100 ml-1">
+                    <button @click="confirmDeleteTask(t)" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 ml-1">
                       <i data-lucide="trash-2" class="w-3 h-3"></i>
                     </button>
                     {% endif %}
@@ -145,7 +135,7 @@
               </template>
               <template x-if="!project.tasks || project.tasks.length === 0">
                 <tr>
-                  <td colspan="10" class="px-4 py-12 text-center text-slate-400">
+                  <td colspan="10" class="px-4 py-12 text-center text-slate-400 dark:text-slate-500">
                     <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
                     <p>No tasks in this project yet.</p>
                   </td>
@@ -160,16 +150,16 @@
       <div x-show="taskModalOpen" x-cloak
            class="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto"
            @keydown.escape.window="taskModalOpen = false">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-8" @click.outside="taskModalOpen = false">
-          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl my-8" @click.outside="taskModalOpen = false">
+          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-800 rounded-t-2xl">
             <h3 class="font-semibold text-lg" x-text="editingTaskId ? (IS_ADMIN ? 'Edit task' : 'Update actuals') : 'New task'"></h3>
-            <button @click="taskModalOpen = false" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <button @click="taskModalOpen = false" class="text-slate-400 hover:text-slate-700 dark:text-slate-300"><i data-lucide="x" class="w-5 h-5"></i></button>
           </div>
 
           <form @submit.prevent="saveTask()" class="p-5">
             <!-- For employees: clear notice about what they can edit -->
             <template x-if="editingTaskId && !IS_ADMIN">
-              <div class="p-3 mb-4 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-700 flex gap-2">
+              <div class="p-3 mb-4 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-700 dark:text-blue-400 flex gap-2">
                 <i data-lucide="info" class="w-4 h-4 shrink-0 mt-0.5"></i>
                 <span>You can only update <b>Actual dates</b>, <b>Actual effort</b>, <b>Status</b>, and <b>Remarks</b>. Other fields are managed by the project manager.</span>
               </div>
@@ -178,77 +168,77 @@
             <div class="grid grid-cols-2 gap-3">
               <!-- Phase -->
               <div>
-                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Milestone phase</label>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Milestone phase</label>
                 <input x-model="taskForm.milestone_phase" type="text" placeholder="e.g. Phase 1, Design"
                        :disabled="editingTaskId && !IS_ADMIN"
-                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 disabled:text-slate-500">
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500">
               </div>
               <!-- Category -->
               <div>
-                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Category</label>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Category</label>
                 <input x-model="taskForm.category" type="text" placeholder="e.g. Development, Testing"
                        :disabled="editingTaskId && !IS_ADMIN"
-                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 disabled:text-slate-500">
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500">
               </div>
               <!-- Task description -->
               <div class="col-span-2">
-                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Task description *</label>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Task description *</label>
                 <textarea x-model="taskForm.task_description" required rows="2"
                           :disabled="editingTaskId && !IS_ADMIN"
-                          class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 disabled:text-slate-500"></textarea>
+                          class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500"></textarea>
               </div>
               <!-- Action item -->
               <div class="col-span-2">
-                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Action item</label>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Action item</label>
                 <input x-model="taskForm.action_item" type="text" placeholder="The CMMI-tracked action"
                        :disabled="editingTaskId && !IS_ADMIN"
-                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 disabled:text-slate-500">
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500">
               </div>
 
               <!-- Planned dates -->
               <div>
-                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Planned start</label>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Planned start</label>
                 <input x-model="taskForm.planned_start_date" type="date"
                        :disabled="editingTaskId && !IS_ADMIN"
-                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 disabled:text-slate-500">
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500">
               </div>
               <div>
-                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Planned end</label>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Planned end</label>
                 <input x-model="taskForm.planned_end_date" type="date"
                        :disabled="editingTaskId && !IS_ADMIN"
-                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 disabled:text-slate-500">
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500">
               </div>
 
               <!-- Actual dates - editable by both -->
               <div>
-                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 mb-1">Actual start</label>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 mb-1">Actual start</label>
                 <input x-model="taskForm.actual_start_date" type="date"
-                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 focus:border-emerald-500 outline-none text-sm">
+                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-900/40 focus:border-emerald-500 outline-none text-sm">
               </div>
               <div>
-                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 mb-1">Actual end</label>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 mb-1">Actual end</label>
                 <input x-model="taskForm.actual_end_date" type="date"
-                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 focus:border-emerald-500 outline-none text-sm">
+                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-900/40 focus:border-emerald-500 outline-none text-sm">
               </div>
 
               <!-- Effort -->
               <div>
-                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Planned effort (hours)</label>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Planned effort (hours)</label>
                 <input x-model.number="taskForm.planned_effort" type="number" step="0.5" min="0"
                        :disabled="editingTaskId && !IS_ADMIN"
-                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 disabled:text-slate-500">
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500">
               </div>
               <div>
-                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 mb-1">Actual effort (hours)</label>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 mb-1">Actual effort (hours)</label>
                 <input x-model.number="taskForm.actual_effort" type="number" step="0.5" min="0"
-                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 focus:border-emerald-500 outline-none text-sm">
+                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-900/40 focus:border-emerald-500 outline-none text-sm">
               </div>
 
               <!-- Status -->
               <div>
-                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 mb-1">Status</label>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 mb-1">Status</label>
                 <select x-model="taskForm.status"
-                        class="w-full px-3 py-2 rounded-lg border border-emerald-200 focus:border-emerald-500 outline-none text-sm bg-white">
+                        class="w-full px-3 py-2 rounded-lg border border-emerald-200 focus:border-emerald-500 outline-none text-sm bg-white dark:bg-slate-800">
                   <option value="not_started">Not started</option>
                   <option value="in_progress">In progress</option>
                   <option value="on_hold">On hold</option>
@@ -258,28 +248,28 @@
 
               <!-- Assignees (admin only) -->
               <div x-show="IS_ADMIN">
-                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-1">Assigned to</label>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Assigned to</label>
                 <select x-model="taskForm.assignee_ids" multiple size="3"
-                        class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm bg-white">
+                        class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm bg-white dark:bg-slate-800">
                   <template x-for="u in allUsers" :key="u.id">
                     <option :value="u.id" x-text="u.full_name"></option>
                   </template>
                 </select>
-                <p class="text-[10px] text-slate-400 mt-1">Hold Ctrl/Cmd to select multiple</p>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
               </div>
 
               <!-- Remarks -->
               <div class="col-span-2">
-                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 mb-1">Remarks</label>
+                <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 mb-1">Remarks</label>
                 <textarea x-model="taskForm.remarks" rows="2"
-                          class="w-full px-3 py-2 rounded-lg border border-emerald-200 focus:border-emerald-500 outline-none text-sm"></textarea>
+                          class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-900/40 focus:border-emerald-500 outline-none text-sm"></textarea>
               </div>
             </div>
 
-            <div x-show="taskError" class="mt-3 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700" x-text="taskError"></div>
+            <div x-show="taskError" class="mt-3 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700 dark:text-red-400" x-text="taskError"></div>
 
-            <div class="flex justify-end gap-2 pt-4 mt-4 border-t border-slate-100">
-              <button type="button" @click="taskModalOpen = false" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100">Cancel</button>
+            <div class="flex justify-end gap-2 pt-4 mt-4 border-t border-slate-100 dark:border-slate-700">
+              <button type="button" @click="taskModalOpen = false" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 dark:bg-slate-700">Cancel</button>
               <button type="submit" :disabled="savingTask"
                       class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-brand-500 to-accent-500 hover:opacity-95 disabled:opacity-60">
                 <span x-text="savingTask ? 'Saving...' : 'Save'"></span>
@@ -294,15 +284,15 @@
       <div x-show="deleteTaskTarget" x-cloak
            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
            @keydown.escape.window="deleteTaskTarget = null">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm" @click.outside="deleteTaskTarget = null">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm" @click.outside="deleteTaskTarget = null">
           <div class="p-6 text-center">
-            <div class="w-14 h-14 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-3">
-              <i data-lucide="alert-triangle" class="w-7 h-7 text-red-600"></i>
+            <div class="w-14 h-14 mx-auto rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-3">
+              <i data-lucide="alert-triangle" class="w-7 h-7 text-red-600 dark:text-red-400"></i>
             </div>
-            <h3 class="font-bold text-lg text-slate-900 mb-1">Delete this task?</h3>
-            <p class="text-sm text-slate-500 mb-5" x-text="deleteTaskTarget?.task_description"></p>
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white mb-1">Delete this task?</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mb-5" x-text="deleteTaskTarget?.task_description"></p>
             <div class="flex gap-2 justify-center">
-              <button @click="deleteTaskTarget = null" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200">Cancel</button>
+              <button @click="deleteTaskTarget = null" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200">Cancel</button>
               <button @click="doDeleteTask()" :disabled="deletingTask" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700">
                 <span x-text="deletingTask ? 'Deleting...' : 'Delete'"></span>
               </button>
@@ -316,26 +306,26 @@
       <div x-show="commentsOpen" x-cloak
            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
            @keydown.escape.window="commentsOpen = false">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-4 flex flex-col" style="max-height:80vh;" @click.outside="commentsOpen = false">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl my-4 flex flex-col" style="max-height:80vh;" @click.outside="commentsOpen = false">
           <!-- Header -->
-          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
             <div>
               <h3 class="font-semibold text-lg flex items-center gap-2">
                 <i data-lucide="message-circle" class="w-5 h-5 text-purple-600"></i>
                 Comments
               </h3>
-              <p class="text-xs text-slate-500 mt-0.5 truncate max-w-md" x-text="commentTaskTitle"></p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5 truncate max-w-md" x-text="commentTaskTitle"></p>
             </div>
-            <button @click="commentsOpen = false" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <button @click="commentsOpen = false" class="text-slate-400 hover:text-slate-700 dark:text-slate-300"><i data-lucide="x" class="w-5 h-5"></i></button>
           </div>
 
           <!-- Comments list -->
           <div class="flex-1 overflow-y-auto p-5 space-y-3">
             <template x-if="commentsLoading">
-              <div class="text-center text-slate-400 py-8">Loading comments...</div>
+              <div class="text-center text-slate-400 dark:text-slate-500 py-8">Loading comments...</div>
             </template>
             <template x-if="!commentsLoading && comments.length === 0">
-              <div class="text-center text-slate-400 py-8">
+              <div class="text-center text-slate-400 dark:text-slate-500 py-8">
                 <i data-lucide="message-square" class="w-10 h-10 mx-auto mb-2 text-slate-300"></i>
                 <p class="text-sm">No comments yet — be the first!</p>
               </div>
@@ -345,30 +335,30 @@
                 <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white font-semibold text-sm shrink-0"
                      x-text="c.author_name[0].toUpperCase()"></div>
                 <div class="flex-1 min-w-0">
-                  <div class="bg-slate-50 rounded-2xl rounded-tl-sm px-4 py-2.5">
+                  <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl rounded-tl-sm px-4 py-2.5">
                     <div class="flex items-center gap-2 mb-1">
-                      <span class="font-semibold text-sm text-slate-800" x-text="c.author_name"></span>
-                      <span class="text-[10px] text-slate-400" x-text="c.time_ago"></span>
-                      <span class="text-[10px] text-slate-400" x-show="c.edited">· edited</span>
+                      <span class="font-semibold text-sm text-slate-800 dark:text-slate-200" x-text="c.author_name"></span>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500" x-text="c.time_ago"></span>
+                      <span class="text-[10px] text-slate-400 dark:text-slate-500" x-show="c.edited">· edited</span>
                     </div>
                     <template x-if="editingCommentId !== c.id">
-                      <p class="text-sm text-slate-700 whitespace-pre-wrap" x-text="c.body"></p>
+                      <p class="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap" x-text="c.body"></p>
                     </template>
                     <template x-if="editingCommentId === c.id">
                       <div>
                         <textarea x-model="editingCommentText" rows="3"
-                                  class="w-full text-sm px-2 py-1 rounded border border-slate-200 focus:border-brand-500 outline-none"></textarea>
+                                  class="w-full text-sm px-2 py-1 rounded border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none"></textarea>
                         <div class="flex gap-1 mt-1">
                           <button @click="saveCommentEdit(c)" class="text-xs px-2 py-1 rounded bg-brand-500 text-white">Save</button>
-                          <button @click="editingCommentId = null" class="text-xs px-2 py-1 rounded bg-slate-100">Cancel</button>
+                          <button @click="editingCommentId = null" class="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-700">Cancel</button>
                         </div>
                       </div>
                     </template>
                   </div>
                   <div class="flex gap-3 mt-1 ml-2 text-[11px]"
                        x-show="(c.author_id === CURRENT_USER_ID || IS_ADMIN) && editingCommentId !== c.id">
-                    <button x-show="c.author_id === CURRENT_USER_ID" @click="startEditComment(c)" class="text-slate-500 hover:text-slate-800">Edit</button>
-                    <button @click="deleteComment(c)" class="text-red-500 hover:text-red-700">Delete</button>
+                    <button x-show="c.author_id === CURRENT_USER_ID" @click="startEditComment(c)" class="text-slate-500 hover:text-slate-800 dark:text-slate-200">Edit</button>
+                    <button @click="deleteComment(c)" class="text-red-500 hover:text-red-700 dark:text-red-400">Delete</button>
                   </div>
                 </div>
               </div>
@@ -376,18 +366,18 @@
           </div>
 
           <!-- Add comment input -->
-          <div class="border-t border-slate-100 p-4">
+          <div class="border-t border-slate-100 dark:border-slate-700 p-4">
             <form @submit.prevent="postComment()" class="flex gap-2 items-end">
               <textarea x-model="newComment" rows="2"
                         @keydown.enter.exact.prevent="postComment()"
                         placeholder="Write a comment... (use @Name to mention someone)"
-                        class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none resize-none"></textarea>
+                        class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none resize-none"></textarea>
               <button type="submit" :disabled="posting || !newComment.trim()"
                       class="px-4 py-2 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-semibold disabled:opacity-50">
                 <i data-lucide="send" class="w-4 h-4"></i>
               </button>
             </form>
-            <p class="text-[10px] text-slate-400 mt-1.5">Press Enter to send · Shift+Enter for new line</p>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5">Press Enter to send · Shift+Enter for new line</p>
           </div>
         </div>
       </div>
@@ -405,18 +395,18 @@
                 <i data-lucide="paperclip" class="w-5 h-5 text-amber-500"></i>
                 Attachments
               </h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-md" x-text="attachmentsTask?.task_description || ''"></p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 truncate max-w-md" x-text="attachmentsTask?.task_description || ''"></p>
             </div>
-            <button @click="attachmentsOpen = false" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <button @click="attachmentsOpen = false" class="text-slate-400 hover:text-slate-700 dark:text-slate-300"><i data-lucide="x" class="w-5 h-5"></i></button>
           </div>
 
           <!-- Attachments list -->
           <div class="flex-1 overflow-y-auto p-4">
             <template x-if="attachmentsLoading">
-              <div class="text-center text-slate-400 py-8">Loading attachments...</div>
+              <div class="text-center text-slate-400 dark:text-slate-500 py-8">Loading attachments...</div>
             </template>
             <template x-if="!attachmentsLoading && attachments.length === 0">
-              <div class="text-center text-slate-400 py-12">
+              <div class="text-center text-slate-400 dark:text-slate-500 py-12">
                 <i data-lucide="file-plus" class="w-12 h-12 mx-auto mb-2 text-slate-300"></i>
                 <p class="text-sm">No attachments yet</p>
                 <p class="text-xs mt-1">Upload files like designs, docs, or evidence (10MB max each)</p>
@@ -438,7 +428,7 @@
 
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-slate-900 dark:text-white truncate" x-text="a.original_name"></p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 truncate">
                       <span x-text="a.size_human"></span> · uploaded by <span x-text="a.uploader_name"></span>
                       <span x-text="' · ' + formatDate(a.created_at)"></span>
                     </p>
@@ -467,7 +457,7 @@
               <div class="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                 <div class="h-full bg-gradient-to-r from-brand-500 to-accent-500 transition-all" :style="`width: ${uploadProgress}%`"></div>
               </div>
-              <p class="text-xs text-slate-500 mt-1" x-text="`Uploading... ${uploadProgress}%`"></p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1" x-text="`Uploading... ${uploadProgress}%`"></p>
             </div>
 
             <label class="block">
@@ -478,7 +468,7 @@
                 <span x-text="uploading ? 'Uploading...' : 'Choose file to upload'"></span>
               </button>
             </label>
-            <p class="text-[10px] text-slate-400 mt-1.5 text-center">Max 10MB · Most file types except .exe / .bat / .sh</p>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 text-center">Max 10MB · Most file types except .exe / .bat / .sh</p>
           </div>
         </div>
       </div>
@@ -486,7 +476,7 @@
       <!-- Toast -->
       <div x-show="toast.msg" x-cloak x-transition
            class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2"
-           :class="toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'">
+           :class="toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600">
         <i :data-lucide="toast.type === 'success' ? 'check-circle' : 'alert-circle'" class="w-4 h-4"></i>
         <span x-text="toast.msg"></span>
       </div>
@@ -495,12 +485,12 @@
   </template>
 
   <template x-if="!project && !loadError">
-    <div class="text-center py-16 text-slate-400">Loading...</div>
+    <div class="text-center py-16 text-slate-400 dark:text-slate-500">Loading...</div>
   </template>
   <template x-if="loadError">
     <div class="text-center py-16">
-      <p class="text-red-600 font-semibold mb-2">Cannot load project</p>
-      <p class="text-sm text-slate-500" x-text="loadError"></p>
+      <p class="text-red-600 dark:text-red-400 font-semibold mb-2">Cannot load project</p>
+      <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500" x-text="loadError"></p>
     </div>
   </template>
 

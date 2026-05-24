@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+{% block title %}Calendar | Timesheet AI{% endblock %}
+
+{% block content %}
+<div class="p-6 lg:p-8" x-data="calendarApp()" x-init="load()">
+
+  <!-- Header -->
+  <div class="flex justify-between items-end mb-6 flex-wrap gap-3">
+    <div>
+      <p class="text-xs uppercase tracking-wide font-semibold text-brand-600 dark:text-brand-400">Schedule view</p>
+      <h1 class="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+        <i data-lucide="calendar" class="w-7 h-7 text-brand-500"></i>
+        Calendar
+      </h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        Tasks plotted on their planned due dates
+      </p>
+    </div>
+
+    <div class="flex gap-2 flex-wrap items-center">
+      <!-- Project filter -->
+      <select x-model="filterProjectId" @change="applyFilters()"
+              class="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:border-brand-500 outline-none text-slate-900 dark:text-white">
+        <option value="">All projects</option>
+        <template x-for="p in projects" :key="p.id">
+          <option :value="p.id" x-text="p.name"></option>
+        </template>
+      </select>
+
+      <!-- Status filter -->
+      <select x-model="filterStatus" @change="applyFilters()"
+              class="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:border-brand-500 outline-none text-slate-900 dark:text-white">
+        <option value="">All statuses</option>
+        <option value="not_started">Not started</option>
+        <option value="in_progress">In progress</option>
+        <option value="blocked">Blocked</option>
+        <option value="completed">Completed</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Calendar navigation -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-3 mb-4 flex items-center justify-between flex-wrap gap-2">
+    <div class="flex items-center gap-2">
+      <button @click="goToday()"
+              class="px-3 py-1.5 text-sm font-semibold rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white hover:opacity-95">
+        Today
+      </button>
+      <button @click="prevMonth()" title="Previous month"
+              class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300">
+        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+      </button>
+      <button @click="nextMonth()" title="Next month"
+              class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300">
+        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+      </button>
+      <h2 class="ml-2 text-lg font-semibold text-slate-900 dark:text-white" x-text="monthLabel()"></h2>
+    </div>
+
+    <div class="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
+      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-400"></span> Not started</span>
+      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> In progress</span>
+      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Blocked / Overdue</span>
+      <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Completed</span>
+    </div>
+  </div>
+
+  <!-- Stats strip -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-3 mb-4 flex items-center gap-6 flex-wrap text-sm text-slate-600 dark:text-slate-400">
+    <span>📅 <b class="text-slate-900 dark:text-white" x-text="monthTasksCount()"></b> tasks this month</span>
+    <span class="text-red-600 dark:text-red-400">⏰ <b x-text="monthOverdueCount()"></b> overdue</span>
+    <span>✓ <b class="text-emerald-600 dark:text-emerald-400" x-text="monthCompletedCount()"></b> completed</span>
+    <span>📆 <b x-text="todayTasksCount()"></b> due today</span>
+  </div>
+
+  <!-- Calendar grid -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+    <!-- Weekday headers -->
+    <div class="grid grid-cols-7 border-b border-slate-100 dark:border-slate-700">
+      <template x-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="day">
+        <div class="text-[10px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400 py-2 text-center"
+             :class="day === 'Sun' || day === 'Sat' ? 'bg-slate-50 dark:bg-slate-900/50' : ''"
+             x-text="day"></div>
+      </template>
+    </div>
+
+    <!-- Day cells -->
+    <div class="grid grid-cols-7" style="grid-auto-rows: minmax(120px, 1fr);">
+      <template x-for="(day, idx) in days" :key="idx">
+        <div class="border-r border-b border-slate-100 dark:border-slate-700 last:border-r-0 p-1.5 overflow-hidden relative"
+             :class="{
+               'bg-slate-50 dark:bg-slate-900/30': !day.inCurrentMonth,
+               'bg-brand-50 dark:bg-brand-900/10': day.isToday,
+               'bg-slate-50/50 dark:bg-slate-900/20': day.isWeekend && day.inCurrentMonth,
+             }">
+
+          <!-- Day number -->
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-semibold"
+                  :class="{
+                    'text-slate-300 dark:text-slate-600': !day.inCurrentMonth,
+                    'text-brand-600 dark:text-brand-400': day.isToday,
+                    'text-slate-700 dark:text-slate-300': day.inCurrentMonth && !day.isToday,
+                  }"
+                  x-text="day.dayNumber"></span>
+            <span x-show="day.isToday"
+                  class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-gradient-to-r from-brand-500 to-accent-500 text-white">
+              Today
+            </span>
+          </div>
+
+          <!-- Tasks for this day -->
+          <div class="space-y-1">
+            <template x-for="t in (day.tasks || []).slice(0, 3)" :key="t.id">
+              <div @click="openTask(t)"
+                   class="px-1.5 py-1 rounded text-[10px] font-medium cursor-pointer truncate transition hover:scale-[1.02] hover:shadow-sm"
+                   :class="statusClass(t)"
+                   :title="(t.task_description || '') + ' — ' + t.project_name">
+                <span x-show="t.is_overdue" class="mr-0.5">⏰</span>
+                <span x-text="t.task_description || '(no desc)'"></span>
+              </div>
+            </template>
+            <template x-if="(day.tasks || []).length > 3">
+              <button @click="openDay(day)"
+                      class="text-[10px] text-brand-600 dark:text-brand-400 hover:underline font-semibold pl-1.5">
+                + <span x-text="day.tasks.length - 3"></span> more
+              </button>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- Day detail modal (when "+N more" clicked) -->
+  <div x-show="dayModalOpen" x-cloak x-transition
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+       @keydown.escape.window="dayModalOpen = false">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-y-auto" @click.outside="dayModalOpen = false">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-800">
+        <div>
+          <h3 class="font-semibold text-slate-900 dark:text-white" x-text="modalDay?.label || ''"></h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400" x-text="(modalDay?.tasks?.length || 0) + ' tasks due'"></p>
+        </div>
+        <button @click="dayModalOpen = false" class="text-slate-400 hover:text-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-4 space-y-2">
+        <template x-for="t in (modalDay?.tasks || [])" :key="t.id">
+          <a :href="`/projects/${t.project_id}`"
+             class="block p-3 rounded-lg border border-slate-100 dark:border-slate-700 hover:border-brand-500 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition">
+            <div class="flex items-start justify-between gap-2">
+              <p class="text-sm font-medium text-slate-900 dark:text-white" x-text="t.task_description"></p>
+              <span x-show="t.is_overdue" class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 shrink-0">Overdue</span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" x-text="t.project_name"></p>
+            <div class="flex items-center gap-2 mt-2">
+              <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full"
+                    :class="badgeClass(t)"
+                    x-text="(t.status || 'not_started').replace('_', ' ')"></span>
+              <div class="flex -space-x-1">
+                <template x-for="a in (t.assignees || []).slice(0, 3)" :key="a.id">
+                  <div class="w-5 h-5 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white text-[9px] font-bold border-2 border-white dark:border-slate-800"
+                       :title="a.name" x-text="a.name[0].toUpperCase()"></div>
+                </template>
+              </div>
+            </div>
+          </a>
+        </template>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function calendarApp() {
+  return {
+    loading: true,
+    allTasks: [],
+    projects: [],
+    filterProjectId: '',
+    filterStatus: '',
+
+    // Current displayed month
+    viewYear: new Date().getFullYear(),
+    viewMonth: new Date().getMonth(),  // 0-indexed
+
+    days: [],
+
+    dayModalOpen: false,
+    modalDay: null,
+
+    monthNames: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+
+    monthLabel() {
+      return `${this.monthNames[this.viewMonth]} ${this.viewYear}`;
+    },
+
+    async load() {
+      this.loading = true;
+      try {
+        const pr = await fetch('/api/projects');
+        if (pr.ok) {
+          this.projects = await pr.json();
+          const promises = this.projects.map(async (p) => {
+            const r = await fetch(`/api/projects/${p.id}`);
+            if (!r.ok) return [];
+            const data = await r.json();
+            return (data.tasks || []).map(t => ({...t, project_name: p.name, project_id: p.id}));
+          });
+          const groups = await Promise.all(promises);
+          this.allTasks = groups.flat();
+        }
+        this.buildGrid();
+      } catch (e) {
+        console.error(e);
+      } finally {
+        this.loading = false;
+        this.$nextTick(() => lucide.createIcons());
+      }
+    },
+
+    buildGrid() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const firstOfMonth = new Date(this.viewYear, this.viewMonth, 1);
+      const lastOfMonth = new Date(this.viewYear, this.viewMonth + 1, 0);
+
+      // Start grid on Sunday before first-of-month
+      const startDate = new Date(firstOfMonth);
+      startDate.setDate(startDate.getDate() - firstOfMonth.getDay());
+
+      // End grid on Saturday after last-of-month
+      const endDate = new Date(lastOfMonth);
+      endDate.setDate(endDate.getDate() + (6 - lastOfMonth.getDay()));
+
+      const days = [];
+      let cursor = new Date(startDate);
+      while (cursor <= endDate) {
+        const iso = this.toIsoDate(cursor);
+        const tasks = this.tasksForDate(iso);
+        days.push({
+          date: new Date(cursor),
+          iso: iso,
+          dayNumber: cursor.getDate(),
+          inCurrentMonth: cursor.getMonth() === this.viewMonth,
+          isToday: cursor.getTime() === today.getTime(),
+          isWeekend: cursor.getDay() === 0 || cursor.getDay() === 6,
+          tasks: tasks,
+          label: cursor.toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric', year:'numeric'}),
+        });
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      this.days = days;
+    },
+
+    toIsoDate(d) {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    },
+
+    tasksForDate(iso) {
+      return this.allTasks.filter(t => {
+        if (!t.planned_end_date) return false;
+        if (t.planned_end_date !== iso) return false;
+        if (this.filterProjectId && String(t.project_id) !== String(this.filterProjectId)) return false;
+        if (this.filterStatus && (t.status || 'not_started') !== this.filterStatus) return false;
+        return true;
+      });
+    },
+
+    applyFilters() {
+      this.buildGrid();
+      this.$nextTick(() => lucide.createIcons());
+    },
+
+    prevMonth() {
+      if (this.viewMonth === 0) {
+        this.viewMonth = 11;
+        this.viewYear -= 1;
+      } else {
+        this.viewMonth -= 1;
+      }
+      this.buildGrid();
+      this.$nextTick(() => lucide.createIcons());
+    },
+
+    nextMonth() {
+      if (this.viewMonth === 11) {
+        this.viewMonth = 0;
+        this.viewYear += 1;
+      } else {
+        this.viewMonth += 1;
+      }
+      this.buildGrid();
+      this.$nextTick(() => lucide.createIcons());
+    },
+
+    goToday() {
+      const t = new Date();
+      this.viewYear = t.getFullYear();
+      this.viewMonth = t.getMonth();
+      this.buildGrid();
+      this.$nextTick(() => lucide.createIcons());
+    },
+
+    statusClass(t) {
+      if (t.is_overdue) return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300';
+      const s = t.status || 'not_started';
+      if (s === 'completed')   return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300';
+      if (s === 'in_progress') return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300';
+      if (s === 'blocked')     return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300';
+      return 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
+    },
+
+    badgeClass(t) {
+      const s = t.status || 'not_started';
+      if (s === 'completed')   return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+      if (s === 'in_progress') return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+      if (s === 'blocked')     return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+      return 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
+    },
+
+    openTask(t) {
+      window.location.href = `/projects/${t.project_id}`;
+    },
+
+    openDay(day) {
+      this.modalDay = day;
+      this.dayModalOpen = true;
+      this.$nextTick(() => lucide.createIcons());
+    },
+
+    monthTasksCount() {
+      return this.days.filter(d => d.inCurrentMonth).reduce((sum, d) => sum + (d.tasks?.length || 0), 0);
+    },
+
+    monthOverdueCount() {
+      return this.days.filter(d => d.inCurrentMonth).reduce((sum, d) => sum + (d.tasks || []).filter(t => t.is_overdue).length, 0);
+    },
+
+    monthCompletedCount() {
+      return this.days.filter(d => d.inCurrentMonth).reduce((sum, d) => sum + (d.tasks || []).filter(t => t.status === 'completed').length, 0);
+    },
+
+    todayTasksCount() {
+      const today = this.days.find(d => d.isToday);
+      return today ? (today.tasks?.length || 0) : 0;
+    },
+  };
+}
+</script>
+{% endblock %}

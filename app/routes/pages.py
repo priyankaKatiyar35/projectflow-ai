@@ -106,3 +106,59 @@ def okrs_page(request: Request, db: Session = Depends(get_db)):
     if not user:
         return RedirectResponse(url="/login", status_code=303)
     return templates.TemplateResponse(request, "okrs.html", {"user": user})
+
+
+@router.get("/kanban", response_class=HTMLResponse)
+def kanban_page(request: Request, db: Session = Depends(get_db)):
+    """Kanban board — drag-and-drop task management."""
+    user = current_user_or_redirect(request, db)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    return templates.TemplateResponse(request, "kanban.html", {"user": user})
+
+
+@router.get("/calendar", response_class=HTMLResponse)
+def calendar_page(request: Request, db: Session = Depends(get_db)):
+    """Monthly calendar view — tasks plotted on their due dates."""
+    user = current_user_or_redirect(request, db)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    return templates.TemplateResponse(request, "calendar.html", {"user": user})
+
+
+@router.get("/gantt", response_class=HTMLResponse)
+def gantt_page(request: Request, db: Session = Depends(get_db)):
+    """Gantt chart view — timeline with planned vs actual bars."""
+    user = current_user_or_redirect(request, db)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    return templates.TemplateResponse(request, "gantt.html", {"user": user})
+
+
+# ============================================================
+# PWA routes - service worker MUST be at root path for scope = "/"
+# ============================================================
+
+@router.get("/sw.js")
+def service_worker():
+    """Serve service worker from root path so it can control all pages."""
+    from fastapi.responses import FileResponse
+    return FileResponse(
+        "static/sw.js",
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"},
+    )
+
+
+@router.get("/manifest.json")
+def manifest():
+    """Web app manifest at root for some browsers."""
+    from fastapi.responses import FileResponse
+    return FileResponse("static/manifest.json", media_type="application/manifest+json")
+
+
+@router.get("/favicon.ico")
+def favicon():
+    """Serve favicon at root."""
+    from fastapi.responses import FileResponse
+    return FileResponse("static/favicon.ico", media_type="image/x-icon")

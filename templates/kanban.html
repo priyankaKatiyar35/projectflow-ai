@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% block title %}Kanban Board | Timesheet AI{% endblock %}
+
+{% block content %}
+<div class="p-6 lg:p-8" x-data="kanbanApp()" x-init="load()">
+
+  <!-- Header -->
+  <div class="flex justify-between items-end mb-6 flex-wrap gap-3">
+    <div>
+      <p class="text-xs uppercase tracking-wide font-semibold text-brand-600 dark:text-brand-400">Visual workflow</p>
+      <h1 class="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+        <i data-lucide="layout-grid" class="w-7 h-7 text-brand-500"></i>
+        Kanban Board
+      </h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        Drag tasks between columns to change status
+      </p>
+    </div>
+
+    <div class="flex gap-2 flex-wrap">
+      <!-- Project filter -->
+      <select x-model="filterProjectId" @change="applyFilters()"
+              class="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:border-brand-500 outline-none text-slate-900 dark:text-white">
+        <option value="">All projects</option>
+        <template x-for="p in projects" :key="p.id">
+          <option :value="p.id" x-text="p.name"></option>
+        </template>
+      </select>
+
+      <!-- Search -->
+      <div class="relative">
+        <input x-model="searchQuery" @input.debounce.300ms="applyFilters()" type="text"
+               placeholder="Search tasks..."
+               class="pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:border-brand-500 outline-none w-48 text-slate-900 dark:text-white">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-3 mb-4 flex items-center justify-between text-sm">
+    <div class="flex items-center gap-6 flex-wrap text-slate-600 dark:text-slate-400">
+      <span>📋 <b class="text-slate-900 dark:text-white" x-text="totalTasks()"></b> total</span>
+      <span class="text-emerald-600 dark:text-emerald-400">✓ <b x-text="columnCount('completed')"></b> completed</span>
+      <span class="text-blue-600 dark:text-blue-400">⚙ <b x-text="columnCount('in_progress')"></b> in progress</span>
+      <span class="text-red-600 dark:text-red-400">⏰ <b x-text="overdueCount()"></b> overdue</span>
+    </div>
+    <p class="text-xs text-slate-400" x-show="!IS_ADMIN">As an employee, you can drag your own tasks</p>
+  </div>
+
+  <!-- Kanban columns -->
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <template x-for="col in columns" :key="col.status">
+      <div class="bg-slate-100 dark:bg-slate-900 rounded-xl flex flex-col" style="min-height: 500px;">
+
+        <!-- Column header -->
+        <div class="p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full" :class="col.dotClass"></span>
+            <h3 class="font-semibold text-sm text-slate-900 dark:text-white" x-text="col.label"></h3>
+            <span class="text-xs text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-full font-semibold"
+                  x-text="filteredTasks(col.status).length"></span>
+          </div>
+        </div>
+
+        <!-- Drop zone -->
+        <div class="flex-1 p-2 space-y-2 overflow-y-auto"
+             @dragover.prevent="draggedOver = col.status"
+             @dragleave="draggedOver = null"
+             @drop.prevent="onDrop($event, col.status)"
+             :class="draggedOver === col.status ? 'bg-brand-50 dark:bg-brand-900/20' : ''"
+             style="max-height: calc(100vh - 280px);">
+
+          <template x-for="t in filteredTasks(col.status)" :key="t.id">
+            <div :draggable="canDrag(t)"
+                 @dragstart="onDragStart($event, t)"
+                 @dragend="onDragEnd()"
+                 @click="openTask(t)"
+                 :class="canDrag(t) ? 'cursor-move' : 'cursor-pointer'"
+                 class="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 hover:border-brand-500 dark:hover:border-brand-400 hover:shadow-md transition group">
+
+              <!-- Top row: category + overdue -->
+              <div class="flex items-center justify-between mb-1.5">
+                <span x-show="t.category"
+                      class="text-[9px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                      x-text="t.category"></span>
+                <span x-show="t.is_overdue"
+                      class="text-[9px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                  ⏰ Overdue
+                </span>
+              </div>
+
+              <!-- Title -->
+              <p class="text-sm font-medium text-slate-900 dark:text-white mb-2 line-clamp-2" x-text="t.task_description || '(no description)'"></p>
+
+              <!-- Sub-info -->
+              <p x-show="t.milestone_phase" class="text-[10px] text-slate-500 dark:text-slate-400 mb-2" x-text="'📍 ' + t.milestone_phase"></p>
+
+              <!-- Bottom: assignees, effort, due -->
+              <div class="flex items-center justify-between text-xs">
+                <!-- Assignees -->
+                <div class="flex -space-x-1">
+                  <template x-for="a in (t.assignees || []).slice(0, 3)" :key="a.id">
+                    <div class="w-5 h-5 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white text-[9px] font-bold border-2 border-white dark:border-slate-800"
+                         :title="a.name" x-text="a.name[0].toUpperCase()"></div>
+                  </template>
+                  <template x-if="(t.assignees || []).length > 3">
+                    <div class="w-5 h-5 rounded-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center text-[8px] font-bold border-2 border-white dark:border-slate-800"
+                         x-text="'+' + ((t.assignees || []).length - 3)"></div>
+                  </template>
+                  <template x-if="!(t.assignees || []).length">
+                    <span class="text-[10px] text-slate-400 italic">Unassigned</span>
+                  </template>
+                </div>
+
+                <!-- Effort + due -->
+                <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                  <span x-show="t.planned_effort" class="flex items-center gap-0.5">
+                    <i data-lucide="clock" class="w-3 h-3"></i>
+                    <span x-text="t.planned_effort + 'h'"></span>
+                  </span>
+                  <span x-show="t.planned_end_date"
+                        :class="t.is_overdue ? 'text-red-600 dark:text-red-400 font-semibold' : ''"
+                        class="flex items-center gap-0.5">
+                    <i data-lucide="calendar" class="w-3 h-3"></i>
+                    <span x-text="formatDate(t.planned_end_date)"></span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Empty state for column -->
+          <template x-if="filteredTasks(col.status).length === 0 && !loading">
+            <div class="text-center text-slate-400 py-8 text-xs">
+              <i data-lucide="inbox" class="w-6 h-6 mx-auto mb-2 text-slate-300 dark:text-slate-600"></i>
+              <p>No tasks here</p>
+              <p class="mt-1 text-[10px]" x-show="draggedTask">Drop here to move</p>
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- Loading state -->
+  <template x-if="loading">
+    <div class="text-center text-slate-400 py-12">
+      <i data-lucide="loader" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
+      <p>Loading board...</p>
+    </div>
+  </template>
+
+  <!-- Toast -->
+  <div x-show="toast.msg" x-cloak x-transition
+       class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2"
+       :class="toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'">
+    <i :data-lucide="toast.type === 'success' ? 'check-circle' : 'alert-circle'" class="w-4 h-4"></i>
+    <span x-text="toast.msg"></span>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const IS_ADMIN = {{ 'true' if user.role == 'admin' else 'false' }};
+  const CURRENT_USER_ID = {{ user.id }};
+
+  function kanbanApp() {
+    return {
+      loading: true,
+      allTasks: [],
+      projects: [],
+      filterProjectId: '',
+      searchQuery: '',
+
+      draggedTask: null,
+      draggedOver: null,
+
+      toast: { msg: '', type: 'success' },
+
+      columns: [
+        { status: 'not_started', label: 'Not started', dotClass: 'bg-slate-400' },
+        { status: 'in_progress', label: 'In progress', dotClass: 'bg-blue-500' },
+        { status: 'blocked',     label: 'Blocked',     dotClass: 'bg-red-500' },
+        { status: 'completed',   label: 'Completed',   dotClass: 'bg-emerald-500' },
+      ],
+
+      async load() {
+        this.loading = true;
+        try {
+          const pr = await fetch('/api/projects');
+          if (pr.ok) {
+            this.projects = await pr.json();
+            // Load tasks from each project in parallel
+            const taskPromises = this.projects.map(async (p) => {
+              try {
+                const r = await fetch(`/api/projects/${p.id}`);
+                if (r.ok) {
+                  const data = await r.json();
+                  return (data.tasks || []).map(t => ({...t, project_name: p.name, project_id: p.id}));
+                }
+              } catch (e) {}
+              return [];
+            });
+            const taskGroups = await Promise.all(taskPromises);
+            this.allTasks = taskGroups.flat();
+          }
+        } catch (e) {
+          this.showToast('Failed to load board', 'error');
+        } finally {
+          this.loading = false;
+          this.$nextTick(() => lucide.createIcons());
+        }
+      },
+
+      applyFilters() {
+        // Triggers re-render via filteredTasks()
+        this.$nextTick(() => lucide.createIcons());
+      },
+
+      filteredTasks(status) {
+        return this.allTasks.filter(t => {
+          // Status match (normalize)
+          const taskStatus = t.status || 'not_started';
+          if (taskStatus !== status) return false;
+          // Project filter
+          if (this.filterProjectId && String(t.project_id) !== String(this.filterProjectId)) return false;
+          // Search filter
+          if (this.searchQuery.trim()) {
+            const q = this.searchQuery.toLowerCase();
+            const fields = [
+              t.task_description, t.action_item, t.milestone_phase,
+              t.category, t.project_name,
+              ...(t.assignees || []).map(a => a.name),
+            ].filter(Boolean).join(' ').toLowerCase();
+            if (!fields.includes(q)) return false;
+          }
+          return true;
+        });
+      },
+
+      columnCount(status) {
+        return this.filteredTasks(status).length;
+      },
+
+      totalTasks() {
+        return this.allTasks.filter(t => {
+          if (this.filterProjectId && String(t.project_id) !== String(this.filterProjectId)) return false;
+          return true;
+        }).length;
+      },
+
+      overdueCount() {
+        return this.allTasks.filter(t => {
+          if (this.filterProjectId && String(t.project_id) !== String(this.filterProjectId)) return false;
+          return t.is_overdue;
+        }).length;
+      },
+
+      canDrag(task) {
+        // Admin can drag any task. Employees can only drag tasks they're assigned to.
+        if (IS_ADMIN) return true;
+        return (task.assignees || []).some(a => a.id === CURRENT_USER_ID);
+      },
+
+      onDragStart(event, task) {
+        if (!this.canDrag(task)) {
+          event.preventDefault();
+          return;
+        }
+        this.draggedTask = task;
+        event.dataTransfer.effectAllowed = 'move';
+        // Slight visual hint
+        event.target.style.opacity = '0.5';
+      },
+
+      onDragEnd() {
+        // Reset opacity on all task cards
+        document.querySelectorAll('[draggable="true"]').forEach(el => el.style.opacity = '');
+        this.draggedTask = null;
+        this.draggedOver = null;
+      },
+
+      async onDrop(event, newStatus) {
+        this.draggedOver = null;
+        const task = this.draggedTask;
+        this.draggedTask = null;
+        if (!task) return;
+        if (task.status === newStatus) return;  // No change
+
+        // Optimistic update
+        const oldStatus = task.status;
+        task.status = newStatus;
+
+        try {
+          const r = await fetch(`/api/projects/tasks/${task.id}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ status: newStatus }),
+          });
+          if (!r.ok) {
+            const err = await r.json();
+            throw new Error(err.detail || 'Update failed');
+          }
+          this.showToast(`Moved to ${newStatus.replace('_', ' ')}`);
+        } catch (e) {
+          // Rollback
+          task.status = oldStatus;
+          this.showToast(e.message, 'error');
+        }
+        this.$nextTick(() => lucide.createIcons());
+      },
+
+      openTask(task) {
+        // Don't navigate during drag
+        if (this.draggedTask) return;
+        window.location.href = `/projects/${task.project_id}`;
+      },
+
+      formatDate(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        return d.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
+      },
+
+      showToast(msg, type = 'success') {
+        this.toast = { msg, type };
+        setTimeout(() => this.toast.msg = '', 3000);
+      },
+    };
+  }
+</script>
+{% endblock %}

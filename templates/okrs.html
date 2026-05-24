@@ -8,30 +8,30 @@
   <div class="flex flex-wrap items-end justify-between gap-3">
     <div>
       <p class="text-xs uppercase tracking-wide font-semibold text-brand-600">Strategic alignment</p>
-      <h1 class="text-3xl font-bold text-slate-900 flex items-center gap-2">
+      <h1 class="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
         <i data-lucide="target" class="w-7 h-7 text-brand-500"></i>
         Goals &amp; OKRs
       </h1>
-      <p class="text-sm text-slate-500 mt-1">Set ambitious objectives. Measure with key results. Win the quarter.</p>
+      <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">Set ambitious objectives. Measure with key results. Win the quarter.</p>
     </div>
 
     <div class="flex items-center gap-2">
       <!-- Period filter -->
       <div class="relative">
         <select x-model="filters.period" @change="load()"
-                class="appearance-none px-3 py-2 pr-8 rounded-lg border border-slate-200 text-sm focus:border-brand-500 outline-none bg-white">
+                class="appearance-none px-3 py-2 pr-8 rounded-lg border border-slate-200 text-sm focus:border-brand-500 outline-none bg-white dark:bg-slate-800">
           <option value="">All periods</option>
           <template x-for="p in periods" :key="p">
             <option :value="p" x-text="p"></option>
           </template>
         </select>
-        <i data-lucide="chevron-down" class="w-4 h-4 absolute right-2 top-2.5 pointer-events-none text-slate-400"></i>
+        <i data-lucide="chevron-down" class="w-4 h-4 absolute right-2 top-2.5 pointer-events-none text-slate-400 dark:text-slate-500"></i>
       </div>
 
       <!-- Status filter -->
       <div class="relative">
         <select x-model="filters.status" @change="load()"
-                class="appearance-none px-3 py-2 pr-8 rounded-lg border border-slate-200 text-sm focus:border-brand-500 outline-none bg-white">
+                class="appearance-none px-3 py-2 pr-8 rounded-lg border border-slate-200 text-sm focus:border-brand-500 outline-none bg-white dark:bg-slate-800">
           <option value="">All statuses</option>
           <option value="on_track">On track</option>
           <option value="at_risk">At risk</option>
@@ -39,11 +39,11 @@
           <option value="done">Done</option>
           <option value="paused">Paused</option>
         </select>
-        <i data-lucide="chevron-down" class="w-4 h-4 absolute right-2 top-2.5 pointer-events-none text-slate-400"></i>
+        <i data-lucide="chevron-down" class="w-4 h-4 absolute right-2 top-2.5 pointer-events-none text-slate-400 dark:text-slate-500"></i>
       </div>
 
       <a :href="'/api/okrs/export.csv' + (filters.period ? '?period=' + filters.period : '')"
-         class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-sm font-medium text-slate-700">
+         class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 hover:bg-slate-50 dark:bg-slate-900/50 text-sm font-medium text-slate-700 dark:text-slate-300">
         <i data-lucide="download" class="w-4 h-4"></i> CSV
       </a>
 
@@ -56,34 +56,34 @@
 
   <!-- Summary cards -->
   <div class="grid grid-cols-2 md:grid-cols-5 gap-3" x-show="summary">
-    <div class="bg-white rounded-xl border border-slate-100 p-4">
-      <p class="text-xs text-slate-500 uppercase font-semibold">Total</p>
-      <p class="text-2xl font-bold text-slate-900 mt-1" x-text="summary?.total_objectives ?? 0"></p>
+    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4">
+      <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 uppercase font-semibold">Total</p>
+      <p class="text-2xl font-bold text-slate-900 dark:text-white mt-1" x-text="summary?.total_objectives ?? 0"></p>
     </div>
-    <div class="bg-white rounded-xl border border-slate-100 p-4">
-      <p class="text-xs text-slate-500 uppercase font-semibold">Avg progress</p>
+    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4">
+      <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 uppercase font-semibold">Avg progress</p>
       <p class="text-2xl font-bold text-brand-600 mt-1" x-text="(summary?.avg_progress_pct ?? 0) + '%'"></p>
     </div>
-    <div class="bg-emerald-50 rounded-xl border border-emerald-100 p-4">
-      <p class="text-xs text-emerald-700 uppercase font-semibold">On track</p>
-      <p class="text-2xl font-bold text-emerald-700 mt-1" x-text="summary?.by_status?.on_track ?? 0"></p>
+    <div class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-900/40 p-4">
+      <p class="text-xs text-emerald-700 dark:text-emerald-400 uppercase font-semibold">On track</p>
+      <p class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 mt-1" x-text="summary?.by_status?.on_track ?? 0"></p>
     </div>
-    <div class="bg-amber-50 rounded-xl border border-amber-100 p-4">
-      <p class="text-xs text-amber-700 uppercase font-semibold">At risk</p>
-      <p class="text-2xl font-bold text-amber-700 mt-1" x-text="summary?.by_status?.at_risk ?? 0"></p>
+    <div class="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-900/40 p-4">
+      <p class="text-xs text-amber-700 dark:text-amber-400 uppercase font-semibold">At risk</p>
+      <p class="text-2xl font-bold text-amber-700 dark:text-amber-400 mt-1" x-text="summary?.by_status?.at_risk ?? 0"></p>
     </div>
-    <div class="bg-red-50 rounded-xl border border-red-100 p-4">
-      <p class="text-xs text-red-700 uppercase font-semibold">Off track</p>
-      <p class="text-2xl font-bold text-red-700 mt-1" x-text="summary?.by_status?.off_track ?? 0"></p>
+    <div class="bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-900/40 p-4">
+      <p class="text-xs text-red-700 dark:text-red-400 uppercase font-semibold">Off track</p>
+      <p class="text-2xl font-bold text-red-700 dark:text-red-400 mt-1" x-text="summary?.by_status?.off_track ?? 0"></p>
     </div>
   </div>
 
   <!-- Empty state -->
   <template x-if="!loading && objectives.length === 0">
-    <div class="bg-white rounded-2xl border-2 border-dashed border-slate-200 p-12 text-center">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-12 text-center">
       <i data-lucide="target" class="w-14 h-14 mx-auto text-slate-300"></i>
-      <h3 class="text-lg font-semibold text-slate-700 mt-3">No objectives yet</h3>
-      <p class="text-sm text-slate-500 mb-5">Set your first quarterly objective to start aligning the team.</p>
+      <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300 mt-3">No objectives yet</h3>
+      <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mb-5">Set your first quarterly objective to start aligning the team.</p>
       <button @click="openCreate()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-semibold">
         <i data-lucide="plus" class="w-4 h-4"></i> Create your first objective
       </button>
@@ -93,7 +93,7 @@
   <!-- Objectives list -->
   <div class="space-y-4">
     <template x-for="obj in objectives" :key="obj.id">
-      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
 
         <!-- Top section -->
         <div class="p-5">
@@ -102,14 +102,14 @@
               <div class="flex items-center gap-2 mb-1.5 flex-wrap">
                 <span class="text-[10px] uppercase tracking-wide font-bold px-2 py-0.5 rounded-full text-white"
                       :class="statusColors[obj.status]?.bg" x-text="statusColors[obj.status]?.label"></span>
-                <span x-show="obj.category" class="text-[10px] uppercase tracking-wide font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700" x-text="obj.category"></span>
-                <span class="text-[10px] uppercase tracking-wide font-semibold text-slate-400" x-text="obj.period_label"></span>
+                <span x-show="obj.category" class="text-[10px] uppercase tracking-wide font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300" x-text="obj.category"></span>
+                <span class="text-[10px] uppercase tracking-wide font-semibold text-slate-400 dark:text-slate-500" x-text="obj.period_label"></span>
               </div>
-              <h3 class="text-lg font-bold text-slate-900 leading-snug" x-text="obj.title"></h3>
-              <p x-show="obj.description" class="text-sm text-slate-500 mt-1" x-text="obj.description"></p>
-              <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white leading-snug" x-text="obj.title"></h3>
+              <p x-show="obj.description" class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1" x-text="obj.description"></p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1">
                 <i data-lucide="user" class="w-3.5 h-3.5"></i>
-                Owner: <span class="font-medium text-slate-700" x-text="obj.owner_name"></span>
+                Owner: <span class="font-medium text-slate-700 dark:text-slate-300" x-text="obj.owner_name"></span>
               </p>
             </div>
 
@@ -130,19 +130,19 @@
 
             <!-- Actions -->
             <div class="flex items-center gap-1" x-show="canEdit(obj)">
-              <button @click="openEdit(obj)" title="Edit objective" class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg">
+              <button @click="openEdit(obj)" title="Edit objective" class="p-2 text-slate-500 hover:bg-slate-100 dark:bg-slate-700 rounded-lg">
                 <i data-lucide="pencil" class="w-4 h-4"></i>
               </button>
-              <button @click="confirmDelete(obj)" title="Delete" class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+              <button @click="confirmDelete(obj)" title="Delete" class="p-2 text-red-500 hover:bg-red-50 dark:bg-red-900/20 rounded-lg">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
               </button>
             </div>
           </div>
 
           <!-- Key results -->
-          <div class="mt-4 pt-4 border-t border-slate-100 space-y-2">
+          <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 space-y-2">
             <div class="flex items-center justify-between">
-              <p class="text-xs uppercase tracking-wide font-semibold text-slate-500">Key Results (<span x-text="obj.key_results.length"></span>)</p>
+              <p class="text-xs uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500">Key Results (<span x-text="obj.key_results.length"></span>)</p>
               <button @click="openAddKR(obj)" x-show="canEdit(obj)"
                       class="text-xs text-brand-600 hover:underline font-semibold inline-flex items-center gap-1">
                 <i data-lucide="plus" class="w-3 h-3"></i> Add KR
@@ -150,27 +150,23 @@
             </div>
 
             <template x-if="obj.key_results.length === 0">
-              <p class="text-xs text-slate-400 italic">No key results yet — add some to measure progress.</p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 italic">No key results yet — add some to measure progress.</p>
             </template>
 
             <template x-for="kr in obj.key_results" :key="kr.id">
-              <div class="group flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50">
+              <div class="group flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 dark:bg-slate-900/50">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-baseline gap-2 mb-1">
-                    <p class="text-sm font-medium text-slate-800 truncate" x-text="kr.title"></p>
-                    <span class="text-[10px] uppercase font-semibold text-slate-400" x-text="kr.kr_type"></span>
+                    <p class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate" x-text="kr.title"></p>
+                    <span class="text-[10px] uppercase font-semibold text-slate-400 dark:text-slate-500" x-text="kr.kr_type"></span>
                   </div>
                   <div class="flex items-center gap-2">
-                    <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="flex-1 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div class="h-full rounded-full transition-all"
-                           :class="{
-                             'bg-emerald-500': kr.progress_pct >= 70,
-                             'bg-amber-500':   kr.progress_pct >= 30 && kr.progress_pct < 70,
-                             'bg-red-500':     kr.progress_pct < 30,
-                           }"
+                           :class="{ 'bg-emerald-500': kr.progress_pct >= 70, 'bg-amber-500': 30 && < 'bg-red-500': 30, }"
                            :style="`width: ${Math.min(100, kr.progress_pct)}%`"></div>
                     </div>
-                    <span class="text-xs font-mono text-slate-600 shrink-0" x-text="formatProgress(kr)"></span>
+                    <span class="text-xs font-mono text-slate-600 dark:text-slate-400 dark:text-slate-500 shrink-0" x-text="formatProgress(kr)"></span>
                   </div>
                 </div>
                 <button @click="openCheckin(kr, obj)"
@@ -182,7 +178,7 @@
                 <button @click="deleteKR(kr, obj)"
                         x-show="canEdit(obj)"
                         title="Delete KR"
-                        class="opacity-0 group-hover:opacity-100 transition p-1 text-red-500 hover:bg-red-50 rounded">
+                        class="opacity-0 group-hover:opacity-100 transition p-1 text-red-500 hover:bg-red-50 dark:bg-red-900/20 rounded">
                   <i data-lucide="x" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
@@ -197,58 +193,58 @@
   <div x-show="modalOpen" x-cloak
        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
        @keydown.escape.window="modalOpen = false">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-4 max-h-[90vh] overflow-y-auto" @click.outside="modalOpen = false">
-      <div class="sticky top-0 bg-white border-b border-slate-100 px-5 py-4 flex justify-between items-center">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl my-4 max-h-[90vh] overflow-y-auto" @click.outside="modalOpen = false">
+      <div class="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 px-5 py-4 flex justify-between items-center">
         <h3 class="font-semibold text-lg" x-text="form.id ? 'Edit objective' : 'New objective'"></h3>
-        <button @click="modalOpen = false" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button @click="modalOpen = false" class="text-slate-400 hover:text-slate-700 dark:text-slate-300"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <form @submit.prevent="saveObjective()" class="p-5 space-y-4">
 
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1">Objective title *</label>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Objective title *</label>
           <input x-model="form.title" required maxlength="300"
                  placeholder="e.g. Become the #1 CMMI tool in India"
-                 class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none">
+                 class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
         </div>
 
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1">Description</label>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Description</label>
           <textarea x-model="form.description" rows="2"
                     placeholder="Why this matters..."
-                    class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none"></textarea>
+                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none"></textarea>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1">Period label *</label>
+            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Period label *</label>
             <input x-model="form.period_label" required maxlength="30" placeholder="e.g. 2026-Q2"
-                   class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none">
+                   class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
           </div>
           <div>
-            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1">Category</label>
+            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Category</label>
             <input x-model="form.category" maxlength="50" placeholder="e.g. Revenue / Product / People"
-                   class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none">
+                   class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1">Period start</label>
+            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Period start</label>
             <input x-model="form.period_start" type="date"
-                   class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none">
+                   class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
           </div>
           <div>
-            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1">Period end</label>
+            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Period end</label>
             <input x-model="form.period_end" type="date"
-                   class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none">
+                   class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1">Owner *</label>
+            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Owner *</label>
             <select x-model="form.owner_id" required
-                    class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none">
+                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
               <option :value="CURRENT_USER_ID">Me (<span x-text="CURRENT_USER_NAME"></span>)</option>
               <template x-for="u in allUsers" :key="u.id">
                 <option :value="u.id" x-text="u.full_name + ' · ' + u.role"></option>
@@ -256,9 +252,9 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1">Visibility</label>
+            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Visibility</label>
             <select x-model="form.visibility"
-                    class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none">
+                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
               <option value="company">Company (visible to all)</option>
               <option value="private">Private (only owner + admin)</option>
             </select>
@@ -266,9 +262,9 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1">Status</label>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Status</label>
           <select x-model="form.status_override"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none">
+                  class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
             <option value="">Auto (calculated from KRs &amp; time)</option>
             <option value="on_track">On track</option>
             <option value="at_risk">At risk</option>
@@ -280,26 +276,26 @@
 
         <!-- Key Results (when creating new) -->
         <template x-if="!form.id">
-          <div class="border-t border-slate-100 pt-4">
+          <div class="border-t border-slate-100 dark:border-slate-700 pt-4">
             <div class="flex items-center justify-between mb-2">
-              <p class="text-xs uppercase tracking-wide font-semibold text-slate-600">Initial Key Results (optional)</p>
+              <p class="text-xs uppercase tracking-wide font-semibold text-slate-600 dark:text-slate-400 dark:text-slate-500">Initial Key Results (optional)</p>
               <button type="button" @click="form.key_results.push(blankKR())" class="text-xs text-brand-600 hover:underline font-semibold">+ Add KR</button>
             </div>
             <div class="space-y-3">
               <template x-for="(kr, idx) in form.key_results" :key="idx">
-                <div class="p-3 bg-slate-50 rounded-lg space-y-2">
+                <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg space-y-2">
                   <input x-model="kr.title" placeholder="KR title (e.g. Acquire 50 customers)"
-                         class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 outline-none">
+                         class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700 outline-none">
                   <div class="grid grid-cols-4 gap-2">
-                    <select x-model="kr.kr_type" class="px-2 py-1 text-xs rounded border border-slate-200">
+                    <select x-model="kr.kr_type" class="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700">
                       <option value="numeric">Numeric</option>
                       <option value="percent">Percent</option>
                       <option value="boolean">Done/Not done</option>
                       <option value="milestone">Milestones</option>
                     </select>
-                    <input x-model.number="kr.start_value" type="number" step="any" placeholder="Start" class="px-2 py-1 text-xs rounded border border-slate-200">
-                    <input x-model.number="kr.target_value" type="number" step="any" placeholder="Target" class="px-2 py-1 text-xs rounded border border-slate-200">
-                    <input x-model="kr.unit" placeholder="Unit (e.g. $, %, customers)" class="px-2 py-1 text-xs rounded border border-slate-200">
+                    <input x-model.number="kr.start_value" type="number" step="any" placeholder="Start" class="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700">
+                    <input x-model.number="kr.target_value" type="number" step="any" placeholder="Target" class="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700">
+                    <input x-model="kr.unit" placeholder="Unit (e.g. $, %, customers)" class="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700">
                   </div>
                   <button type="button" @click="form.key_results.splice(idx,1)" class="text-[10px] text-red-500 hover:underline">Remove</button>
                 </div>
@@ -308,10 +304,10 @@
           </div>
         </template>
 
-        <div x-show="error" class="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700" x-text="error"></div>
+        <div x-show="error" class="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700 dark:text-red-400" x-text="error"></div>
 
         <div class="flex gap-2 justify-end pt-2">
-          <button type="button" @click="modalOpen = false" class="px-4 py-2 rounded-lg bg-slate-100 text-sm font-medium">Cancel</button>
+          <button type="button" @click="modalOpen = false" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-medium">Cancel</button>
           <button type="submit" :disabled="saving" class="px-4 py-2 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-semibold disabled:opacity-50">
             <span x-text="saving ? 'Saving...' : (form.id ? 'Save changes' : 'Create objective')"></span>
           </button>
@@ -324,16 +320,16 @@
   <div x-show="krModalOpen" x-cloak
        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
        @keydown.escape.window="krModalOpen = false">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" @click.outside="krModalOpen = false">
-      <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md" @click.outside="krModalOpen = false">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
         <h3 class="font-semibold">Add Key Result</h3>
-        <button @click="krModalOpen = false" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button @click="krModalOpen = false" class="text-slate-400 hover:text-slate-700 dark:text-slate-300"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <form @submit.prevent="saveKR()" class="p-5 space-y-3">
         <input x-model="krForm.title" required placeholder="KR title"
-               class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+               class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
         <select x-model="krForm.kr_type"
-                class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+                class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
           <option value="numeric">Numeric (e.g. 100 → 500)</option>
           <option value="percent">Percent (target = N%)</option>
           <option value="boolean">Done / Not done</option>
@@ -341,17 +337,17 @@
         </select>
         <div class="grid grid-cols-3 gap-2">
           <input x-model.number="krForm.start_value" type="number" step="any" placeholder="Start"
-                 class="px-2 py-2 text-sm rounded border border-slate-200">
+                 class="px-2 py-2 text-sm rounded border border-slate-200 dark:border-slate-700">
           <input x-model.number="krForm.current_value" type="number" step="any" placeholder="Current"
-                 class="px-2 py-2 text-sm rounded border border-slate-200">
+                 class="px-2 py-2 text-sm rounded border border-slate-200 dark:border-slate-700">
           <input x-model.number="krForm.target_value" required type="number" step="any" placeholder="Target *"
-                 class="px-2 py-2 text-sm rounded border border-slate-200">
+                 class="px-2 py-2 text-sm rounded border border-slate-200 dark:border-slate-700">
         </div>
         <input x-model="krForm.unit" placeholder="Unit (optional)"
-               class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+               class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
 
         <div class="flex gap-2 justify-end pt-2">
-          <button type="button" @click="krModalOpen = false" class="px-4 py-2 rounded-lg bg-slate-100 text-sm font-medium">Cancel</button>
+          <button type="button" @click="krModalOpen = false" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-medium">Cancel</button>
           <button type="submit" class="px-4 py-2 rounded-lg bg-brand-500 text-white text-sm font-semibold">Add KR</button>
         </div>
       </form>
@@ -362,25 +358,25 @@
   <div x-show="checkinOpen" x-cloak
        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
        @keydown.escape.window="checkinOpen = false">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" @click.outside="checkinOpen = false">
-      <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md" @click.outside="checkinOpen = false">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
         <div>
           <h3 class="font-semibold flex items-center gap-2"><i data-lucide="trending-up" class="w-5 h-5 text-brand-500"></i>Check-in</h3>
-          <p class="text-xs text-slate-500 mt-0.5" x-text="checkinKR?.title"></p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5" x-text="checkinKR?.title"></p>
         </div>
-        <button @click="checkinOpen = false" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button @click="checkinOpen = false" class="text-slate-400 hover:text-slate-700 dark:text-slate-300"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <form @submit.prevent="submitCheckin()" class="p-5 space-y-3">
         <div>
-          <label class="text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1 block">New value *</label>
+          <label class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1 block">New value *</label>
           <input x-model.number="checkin.value_at_checkin" required type="number" step="any"
                  :placeholder="`Target: ${checkinKR?.target_value} ${checkinKR?.unit || ''}`"
-                 class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+                 class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
         </div>
         <div>
-          <label class="text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1 block">Confidence</label>
+          <label class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1 block">Confidence</label>
           <select x-model="checkin.confidence"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none">
+                  class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
             <option value="">--</option>
             <option value="high">🟢 High - on track</option>
             <option value="medium">🟡 Medium - some risk</option>
@@ -388,13 +384,13 @@
           </select>
         </div>
         <div>
-          <label class="text-xs font-semibold uppercase tracking-wide text-slate-600 mb-1 block">Note</label>
+          <label class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1 block">Note</label>
           <textarea x-model="checkin.note" rows="2" placeholder="What happened this week?"
-                    class="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none"></textarea>
+                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none"></textarea>
         </div>
 
         <div class="flex gap-2 justify-end pt-2">
-          <button type="button" @click="checkinOpen = false" class="px-4 py-2 rounded-lg bg-slate-100 text-sm font-medium">Cancel</button>
+          <button type="button" @click="checkinOpen = false" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-medium">Cancel</button>
           <button type="submit" class="px-4 py-2 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-semibold">Submit check-in</button>
         </div>
       </form>
@@ -404,7 +400,7 @@
   <!-- Toast -->
   <div x-show="toast.msg" x-cloak x-transition
        class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2"
-       :class="toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'">
+       :class="toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600">
     <i :data-lucide="toast.type === 'success' ? 'check-circle' : 'alert-circle'" class="w-4 h-4"></i>
     <span x-text="toast.msg"></span>
   </div>

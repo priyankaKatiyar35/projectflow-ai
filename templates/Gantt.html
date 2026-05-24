@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+{% block title %}Gantt Chart | Timesheet AI{% endblock %}
+
+{% block content %}
+<div class="p-6 lg:p-8" x-data="ganttApp()" x-init="load()">
+
+  <!-- Header -->
+  <div class="flex justify-between items-end mb-6 flex-wrap gap-3">
+    <div>
+      <p class="text-xs uppercase tracking-wide font-semibold text-brand-600 dark:text-brand-400">Timeline view</p>
+      <h1 class="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+        <i data-lucide="bar-chart-horizontal" class="w-7 h-7 text-brand-500"></i>
+        Gantt Chart
+      </h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        Project timeline showing planned vs actual progress
+      </p>
+    </div>
+
+    <div class="flex gap-2 flex-wrap items-center">
+      <select x-model="filterProjectId" @change="rebuild()"
+              class="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:border-brand-500 outline-none text-slate-900 dark:text-white">
+        <option value="">All projects</option>
+        <template x-for="p in projects" :key="p.id">
+          <option :value="p.id" x-text="p.name"></option>
+        </template>
+      </select>
+
+      <select x-model="zoomLevel" @change="rebuild()"
+              class="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:border-brand-500 outline-none text-slate-900 dark:text-white">
+        <option value="day">Day view (wide)</option>
+        <option value="week">Week view</option>
+        <option value="month">Month view (compact)</option>
+      </select>
+
+      <button @click="scrollToToday()" title="Scroll to today"
+              class="px-3 py-2 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-semibold hover:opacity-95">
+        Today
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-3 mb-4 flex items-center justify-between flex-wrap gap-2">
+    <div class="flex items-center gap-6 flex-wrap text-sm text-slate-600 dark:text-slate-400">
+      <span>📋 <b class="text-slate-900 dark:text-white" x-text="filteredTasks.length"></b> tasks</span>
+      <span class="text-emerald-600 dark:text-emerald-400">✓ <b x-text="countStatus('completed')"></b> done</span>
+      <span class="text-blue-600 dark:text-blue-400">⚙ <b x-text="countStatus('in_progress')"></b> in progress</span>
+      <span class="text-red-600 dark:text-red-400">⏰ <b x-text="overdueCount()"></b> overdue</span>
+      <span x-show="dateRange.start">📅 <span x-text="formatRange()"></span></span>
+    </div>
+    <div class="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
+      <span class="flex items-center gap-1"><span class="w-3 h-2 rounded bg-slate-400"></span> Planned</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-2 rounded bg-blue-500"></span> Actual</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-2 rounded bg-red-500"></span> Overdue</span>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <template x-if="loading">
+    <div class="text-center text-slate-400 py-12">
+      <i data-lucide="loader" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
+      <p>Building timeline...</p>
+    </div>
+  </template>
+
+  <!-- Empty state -->
+  <template x-if="!loading && filteredTasks.length === 0">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-12 text-center">
+      <i data-lucide="bar-chart-horizontal" class="w-14 h-14 mx-auto text-slate-300 dark:text-slate-600"></i>
+      <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300 mt-3">No tasks with dates</h3>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mb-5">Add tasks with planned start/end dates to see them on the Gantt chart.</p>
+      <a href="/projects" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-semibold">
+        <i data-lucide="folder-plus" class="w-4 h-4"></i> Go to projects
+      </a>
+    </div>
+  </template>
+
+  <!-- Gantt chart -->
+  <div x-show="!loading && filteredTasks.length > 0" x-cloak
+       class="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+
+    <div class="flex">
+
+      <!-- LEFT: Task labels (sticky column) -->
+      <div class="flex-shrink-0 border-r-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30" style="width: 280px;">
+        <!-- Header row matching date axis height -->
+        <div class="h-14 px-3 py-2 border-b border-slate-200 dark:border-slate-700 flex items-end">
+          <span class="text-[10px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400">Task</span>
+        </div>
+
+        <!-- Task name rows -->
+        <template x-for="t in filteredTasks" :key="t.id">
+          <div class="h-12 px-3 py-1.5 border-b border-slate-100 dark:border-slate-700 flex flex-col justify-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/40 transition"
+               @click="openTask(t)">
+            <p class="text-xs font-medium text-slate-900 dark:text-white truncate" :title="t.task_description" x-text="t.task_description || '(no desc)'"></p>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] text-slate-500 dark:text-slate-400 truncate flex-1" x-text="t.project_name"></span>
+              <div class="flex -space-x-1">
+                <template x-for="a in (t.assignees || []).slice(0, 2)" :key="a.id">
+                  <div class="w-4 h-4 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white text-[8px] font-bold border border-white dark:border-slate-800"
+                       :title="a.name" x-text="a.name[0].toUpperCase()"></div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- RIGHT: Timeline (scrollable) -->
+      <div class="flex-1 overflow-x-auto" id="ganttScroll">
+        <div class="relative" :style="`min-width: ${totalWidth}px;`">
+
+          <!-- Date axis header -->
+          <div class="h-14 border-b border-slate-200 dark:border-slate-700 flex sticky top-0 bg-white dark:bg-slate-800 z-10 relative">
+
+            <!-- Top: month labels -->
+            <div class="absolute top-0 left-0 right-0 h-6 flex border-b border-slate-100 dark:border-slate-700">
+              <template x-for="m in monthLabels" :key="m.label + m.left">
+                <div class="absolute h-full flex items-center px-2 text-[10px] uppercase tracking-wide font-bold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700"
+                     :style="`left: ${m.left}px; width: ${m.width}px;`"
+                     x-text="m.label"></div>
+              </template>
+            </div>
+
+            <!-- Bottom: day/week ticks -->
+            <div class="absolute bottom-0 left-0 right-0 h-8 flex">
+              <template x-for="tick in dateTicks" :key="tick.left">
+                <div class="absolute h-full flex items-end pb-1 justify-center text-[9px] font-medium border-r border-slate-100 dark:border-slate-700"
+                     :class="tick.isToday ? 'text-brand-600 dark:text-brand-400 font-bold' : (tick.isWeekend ? 'text-slate-400' : 'text-slate-600 dark:text-slate-400')"
+                     :style="`left: ${tick.left}px; width: ${tickWidth}px;`"
+                     x-text="tick.label"></div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Task rows -->
+          <div class="relative">
+            <!-- Background grid lines (vertical) -->
+            <div class="absolute inset-0 pointer-events-none">
+              <template x-for="tick in dateTicks" :key="'grid-' + tick.left">
+                <div class="absolute top-0 bottom-0 border-r"
+                     :class="tick.isWeekend ? 'border-slate-100 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/20' : 'border-slate-50 dark:border-slate-700/30'"
+                     :style="`left: ${tick.left}px; width: ${tickWidth}px;`"></div>
+              </template>
+            </div>
+
+            <!-- TODAY vertical line -->
+            <div x-show="todayLeft >= 0"
+                 class="absolute top-0 bottom-0 w-0.5 bg-red-500 z-20 pointer-events-none"
+                 :style="`left: ${todayLeft}px;`">
+              <span class="absolute -top-0 left-1 text-[9px] font-bold text-red-500 bg-white dark:bg-slate-800 px-1 rounded">TODAY</span>
+            </div>
+
+            <!-- Task bars -->
+            <template x-for="(t, idx) in filteredTasks" :key="t.id">
+              <div class="h-12 border-b border-slate-100 dark:border-slate-700 relative hover:bg-slate-50 dark:hover:bg-slate-700/20">
+
+                <!-- Planned bar (top) -->
+                <template x-if="t.bars.planned">
+                  <div class="absolute h-3 rounded cursor-pointer hover:opacity-90 transition group"
+                       :class="plannedBarClass(t)"
+                       :style="`left: ${t.bars.planned.left}px; width: ${t.bars.planned.width}px; top: 8px;`"
+                       :title="`Planned: ${t.planned_start_date} → ${t.planned_end_date}`"
+                       @click="openTask(t)">
+                    <div class="hidden group-hover:flex absolute -top-7 left-0 bg-slate-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-30">
+                      <span x-text="`Planned: ${formatDate(t.planned_start_date)} → ${formatDate(t.planned_end_date)} (${t.planned_effort || 0}h)`"></span>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- Actual bar (bottom) - if has actual_start_date or actual_end_date -->
+                <template x-if="t.bars.actual">
+                  <div class="absolute h-3 rounded cursor-pointer hover:opacity-90 transition group"
+                       :class="actualBarClass(t)"
+                       :style="`left: ${t.bars.actual.left}px; width: ${t.bars.actual.width}px; top: 24px;`"
+                       :title="`Actual: ${t.actual_start_date || '?'} → ${t.actual_end_date || 'ongoing'}`"
+                       @click="openTask(t)">
+                    <!-- Progress fill -->
+                    <div class="hidden group-hover:flex absolute -top-7 left-0 bg-slate-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-30">
+                      <span x-text="`Actual: ${formatDate(t.actual_start_date) || '?'} → ${formatDate(t.actual_end_date) || 'ongoing'} (${t.actual_effort || 0}h)`"></span>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- No dates indicator -->
+                <template x-if="!t.bars.planned && !t.bars.actual">
+                  <div class="absolute inset-0 flex items-center pl-2">
+                    <span class="text-[10px] text-slate-400 italic">No dates set</span>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div x-show="toast.msg" x-cloak x-transition
+       class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2 bg-emerald-600 text-white">
+    <i data-lucide="check-circle" class="w-4 h-4"></i>
+    <span x-text="toast.msg"></span>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function ganttApp() {
+  return {
+    loading: true,
+    allTasks: [],
+    projects: [],
+    filterProjectId: '',
+    zoomLevel: 'week',  // day | week | month
+
+    filteredTasks: [],
+    dateRange: { start: null, end: null },
+    totalWidth: 0,
+    tickWidth: 0,
+    dateTicks: [],
+    monthLabels: [],
+    todayLeft: -1,
+
+    toast: { msg: '' },
+
+    async load() {
+      this.loading = true;
+      try {
+        const pr = await fetch('/api/projects');
+        if (pr.ok) {
+          this.projects = await pr.json();
+          const promises = this.projects.map(async (p) => {
+            const r = await fetch(`/api/projects/${p.id}`);
+            if (!r.ok) return [];
+            const data = await r.json();
+            return (data.tasks || []).map(t => ({...t, project_name: p.name, project_id: p.id}));
+          });
+          const groups = await Promise.all(promises);
+          this.allTasks = groups.flat();
+        }
+        this.rebuild();
+      } catch (e) {
+        console.error(e);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    rebuild() {
+      // Filter
+      let tasks = this.allTasks;
+      if (this.filterProjectId) {
+        tasks = tasks.filter(t => String(t.project_id) === String(this.filterProjectId));
+      }
+
+      // Determine date range from all tasks with dates
+      const allDates = [];
+      for (const t of tasks) {
+        if (t.planned_start_date) allDates.push(new Date(t.planned_start_date));
+        if (t.planned_end_date) allDates.push(new Date(t.planned_end_date));
+        if (t.actual_start_date) allDates.push(new Date(t.actual_start_date));
+        if (t.actual_end_date) allDates.push(new Date(t.actual_end_date));
+      }
+
+      if (allDates.length === 0) {
+        // No dates → just default to current month
+        const today = new Date();
+        this.dateRange.start = new Date(today.getFullYear(), today.getMonth(), 1);
+        this.dateRange.end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      } else {
+        let minDate = new Date(Math.min(...allDates));
+        let maxDate = new Date(Math.max(...allDates));
+
+        // Add padding (1 week before, 1 week after) and ensure today is included
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        if (today < minDate) minDate = new Date(today);
+        if (today > maxDate) maxDate = new Date(today);
+
+        minDate.setDate(minDate.getDate() - 7);
+        maxDate.setDate(maxDate.getDate() + 7);
+
+        this.dateRange.start = minDate;
+        this.dateRange.end = maxDate;
+      }
+
+      // Pixel-per-day based on zoom
+      const dayPx = this.zoomLevel === 'day' ? 50 : (this.zoomLevel === 'week' ? 20 : 8);
+      this.tickWidth = dayPx;
+
+      // Total days in range
+      const msPerDay = 86400000;
+      const totalDays = Math.floor((this.dateRange.end - this.dateRange.start) / msPerDay) + 1;
+      this.totalWidth = totalDays * dayPx;
+
+      // Build date ticks
+      const ticks = [];
+      const monthLabels = [];
+      const today = new Date();
+      today.setHours(0,0,0,0);
+
+      let currentMonthLabel = null;
+      let currentMonthStart = 0;
+
+      for (let i = 0; i < totalDays; i++) {
+        const d = new Date(this.dateRange.start);
+        d.setDate(d.getDate() + i);
+        const left = i * dayPx;
+        const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+        const isToday = d.getTime() === today.getTime();
+
+        // Tick label (day number — show every day for 'day' view, weekly for 'week' view, weekly for 'month' view too)
+        let label = '';
+        if (this.zoomLevel === 'day') {
+          label = String(d.getDate());
+        } else if (this.zoomLevel === 'week') {
+          if (d.getDay() === 1) label = String(d.getDate());  // Mondays only
+        } else {
+          if (d.getDay() === 1) label = String(d.getDate());  // Mondays only
+        }
+
+        ticks.push({ left, label, isWeekend, isToday });
+
+        if (isToday) {
+          this.todayLeft = left + (dayPx / 2);
+        }
+
+        // Month label changes
+        const monthKey = `${d.getFullYear()}-${d.getMonth()}`;
+        if (monthKey !== currentMonthLabel) {
+          if (currentMonthLabel !== null) {
+            monthLabels[monthLabels.length - 1].width = left - currentMonthStart;
+          }
+          monthLabels.push({
+            label: d.toLocaleDateString(undefined, {month: 'short', year: 'numeric'}),
+            left: left,
+            width: 0,  // computed below
+          });
+          currentMonthLabel = monthKey;
+          currentMonthStart = left;
+        }
+      }
+      // Close last month label
+      if (monthLabels.length > 0) {
+        monthLabels[monthLabels.length - 1].width = this.totalWidth - currentMonthStart;
+      }
+
+      this.dateTicks = ticks;
+      this.monthLabels = monthLabels;
+
+      // Build bars for each task
+      const tasksWithBars = tasks.map(t => {
+        const bars = {};
+        if (t.planned_start_date || t.planned_end_date) {
+          const start = t.planned_start_date ? new Date(t.planned_start_date) : (t.planned_end_date ? new Date(t.planned_end_date) : null);
+          const end = t.planned_end_date ? new Date(t.planned_end_date) : start;
+          if (start && end) {
+            const leftDays = Math.floor((start - this.dateRange.start) / msPerDay);
+            const widthDays = Math.max(1, Math.floor((end - start) / msPerDay) + 1);
+            bars.planned = {
+              left: leftDays * dayPx,
+              width: widthDays * dayPx - 1,
+            };
+          }
+        }
+        if (t.actual_start_date || t.actual_end_date) {
+          const start = t.actual_start_date ? new Date(t.actual_start_date) : new Date();
+          const end = t.actual_end_date ? new Date(t.actual_end_date) : new Date();
+          const leftDays = Math.floor((start - this.dateRange.start) / msPerDay);
+          const widthDays = Math.max(1, Math.floor((end - start) / msPerDay) + 1);
+          bars.actual = {
+            left: leftDays * dayPx,
+            width: widthDays * dayPx - 1,
+          };
+        }
+        return {...t, bars};
+      });
+
+      // Sort: tasks with planned dates first (by start date), then no-date tasks
+      tasksWithBars.sort((a, b) => {
+        const aHas = !!(a.bars.planned || a.bars.actual);
+        const bHas = !!(b.bars.planned || b.bars.actual);
+        if (aHas && !bHas) return -1;
+        if (!aHas && bHas) return 1;
+        if (a.planned_start_date && b.planned_start_date) {
+          return new Date(a.planned_start_date) - new Date(b.planned_start_date);
+        }
+        return 0;
+      });
+
+      this.filteredTasks = tasksWithBars;
+      this.$nextTick(() => {
+        lucide.createIcons();
+        // Auto-scroll to today on initial load
+        if (this.todayLeft >= 0) {
+          const scroll = document.getElementById('ganttScroll');
+          if (scroll) scroll.scrollLeft = Math.max(0, this.todayLeft - 200);
+        }
+      });
+    },
+
+    plannedBarClass(t) {
+      // Planned bar: slate gray with subtle pattern
+      if (t.is_overdue && t.status !== 'completed') {
+        return 'bg-red-300 dark:bg-red-700/40 border border-red-500 dark:border-red-600';
+      }
+      return 'bg-slate-300 dark:bg-slate-600 border border-slate-400 dark:border-slate-500';
+    },
+
+    actualBarClass(t) {
+      const s = t.status || 'not_started';
+      if (s === 'completed')   return 'bg-emerald-500 hover:bg-emerald-600';
+      if (s === 'in_progress') return 'bg-blue-500 hover:bg-blue-600';
+      if (s === 'blocked')     return 'bg-red-500 hover:bg-red-600';
+      return 'bg-slate-400 hover:bg-slate-500';
+    },
+
+    formatDate(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
+    },
+
+    formatRange() {
+      if (!this.dateRange.start || !this.dateRange.end) return '';
+      return `${this.formatDate(this.dateRange.start.toISOString())} → ${this.formatDate(this.dateRange.end.toISOString())}`;
+    },
+
+    countStatus(s) {
+      return this.filteredTasks.filter(t => (t.status || 'not_started') === s).length;
+    },
+
+    overdueCount() {
+      return this.filteredTasks.filter(t => t.is_overdue).length;
+    },
+
+    openTask(t) {
+      window.location.href = `/projects/${t.project_id}`;
+    },
+
+    scrollToToday() {
+      if (this.todayLeft >= 0) {
+        const scroll = document.getElementById('ganttScroll');
+        if (scroll) {
+          scroll.scrollTo({ left: Math.max(0, this.todayLeft - 200), behavior: 'smooth' });
+          this.toast.msg = 'Scrolled to today';
+          setTimeout(() => this.toast.msg = '', 1500);
+        }
+      } else {
+        this.toast.msg = 'Today not in current range';
+        setTimeout(() => this.toast.msg = '', 1500);
+      }
+    },
+  };
+}
+</script>
+{% endblock %}

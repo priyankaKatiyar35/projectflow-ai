@@ -8,7 +8,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import settings
 from app.database import engine, Base
-from app.routes import auth, pages, tasks, efforts, ai, users, projects, reports, notifications, comments, password_reset, search, okrs, audit, email_settings, attachments
+from app.routes import auth, pages, tasks, efforts, ai, users, projects, reports, notifications, comments, password_reset, search, okrs, audit, email_settings, attachments, websocket
 
 Base.metadata.create_all(bind=engine)
 
@@ -32,6 +32,7 @@ app.include_router(okrs.router)
 app.include_router(audit.router)
 app.include_router(email_settings.router)
 app.include_router(attachments.router)
+app.include_router(websocket.router)
 
 
 @app.get("/health")
