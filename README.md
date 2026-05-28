@@ -152,10 +152,7 @@ It combines a modern PM tool (Kanban, Gantt, Calendar, OKRs) with **real AI inte
 </td>
 <td width="50%" align="center">
 
-### Dark Mode
-<img src="docs/screenshots/dark-mode.png" alt="Dark mode" />
-<em>Every page themed. localStorage + OS-preference detection.</em>
-
+ 
 </td>
 </tr>
 </table>
