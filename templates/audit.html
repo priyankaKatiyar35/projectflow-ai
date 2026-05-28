@@ -59,12 +59,12 @@
       <div>
         <label class="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500">Search</label>
         <input x-model="filters.q" @input.debounce.400ms="load()" placeholder="action / actor..."
-               class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
+               class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
       </div>
       <div>
         <label class="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500">Action</label>
         <select x-model="filters.action" @change="load()"
-                class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700">
+                class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
           <option value="">Any</option>
           <option value="created">Created</option>
           <option value="updated">Updated</option>
@@ -82,7 +82,7 @@
       <div>
         <label class="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500">Category</label>
         <select x-model="filters.category" @change="load()"
-                class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700">
+                class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
           <option value="">All</option>
           <option value="data">Data</option>
           <option value="auth">Auth</option>
@@ -93,7 +93,7 @@
       <div>
         <label class="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500">Entity</label>
         <select x-model="filters.entity_type" @change="load()"
-                class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700">
+                class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
           <option value="">Any</option>
           <option value="user">User</option>
           <option value="project">Project</option>
@@ -105,19 +105,19 @@
       <div>
         <label class="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500">From</label>
         <input x-model="filters.date_from" @change="load()" type="date"
-               class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700">
+               class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]">
       </div>
       <div>
         <label class="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 dark:text-slate-500">To</label>
         <input x-model="filters.date_to" @change="load()" type="date"
-               class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700">
+               class="w-full mt-1 px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]">
       </div>
     </div>
 
     <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
       <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
         <input type="checkbox" x-model="filters.sensitive_only" @change="load()"
-               class="rounded border-slate-300 dark:border-slate-600 text-brand-500 focus:ring-brand-500">
+               class="rounded border-slate-300 dark:border-slate-600 text-brand-500 focus:ring-brand-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
         Sensitive events only (deletions, role changes, failed logins)
       </label>
       <div class="flex items-center gap-2">

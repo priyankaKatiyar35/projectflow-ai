@@ -11,7 +11,7 @@
         <i data-lucide="folder-kanban" class="w-6 h-6 text-brand-500"></i>
         Projects
       </h1>
-      <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5">
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
         {% if user.role == 'admin' %}Manage all company projects and tasks{% else %}Projects you're assigned to{% endif %}
       </p>
     </div>
@@ -28,7 +28,7 @@
     <div class="relative max-w-md">
       <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500"></i>
       <input x-model="search" type="text" placeholder="Search projects..."
-             class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm bg-white dark:bg-slate-800">
+             class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
     </div>
   </div>
 
@@ -42,11 +42,11 @@
           <div class="flex items-start justify-between gap-3 mb-2">
             <h3 class="font-semibold text-slate-900 dark:text-white line-clamp-2" x-text="p.name"></h3>
             <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] uppercase font-semibold shrink-0"
-                  :class="{ 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': p.status === 'completed', 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400': 'in_progress', 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 dark:text-slate-500': 'not_started', 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': 'on_hold', }" x-text="p.status.replace('_', ' ')"></span>
+                  :class="{ 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': p.status === 'completed', 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400': 'in_progress', 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400': 'not_started', 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': 'on_hold', }" x-text="p.status.replace('_', ' ')"></span>
           </div>
-          <p class="text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500 line-clamp-2 mb-4 min-h-[2em]" x-text="p.description || 'No description'"></p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 min-h-[2em]" x-text="p.description || 'No description'"></p>
           <div class="flex items-center justify-between text-xs">
-            <div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 dark:text-slate-500">
+            <div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
               <i data-lucide="list-checks" class="w-3.5 h-3.5"></i>
               <span><span class="font-semibold" x-text="p.completed_count"></span> / <span x-text="p.task_count"></span> tasks</span>
             </div>
@@ -61,10 +61,10 @@
         </a>
         {% if user.role == 'admin' %}
         <div class="px-5 pb-4 flex gap-2">
-          <button @click="openEdit(p)" class="flex-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 inline-flex items-center justify-center gap-1">
+          <button @click="openEdit(p)" class="flex-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 hover:bg-brand-100 dark:hover:bg-brand-900/50 inline-flex items-center justify-center gap-1">
             <i data-lucide="pencil" class="w-3 h-3"></i> Edit
           </button>
-          <button @click="confirmDelete(p)" class="px-2.5 py-1.5 rounded-md text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 inline-flex items-center justify-center gap-1">
+          <button @click="confirmDelete(p)" class="px-2.5 py-1.5 rounded-md text-xs font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 inline-flex items-center justify-center gap-1">
             <i data-lucide="trash-2" class="w-3 h-3"></i> Delete
           </button>
         </div>
@@ -91,33 +91,33 @@
        @keydown.escape.window="modalOpen = false">
     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg" @click.outside="modalOpen = false">
       <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-        <h3 class="font-semibold text-lg" x-text="editingId ? 'Edit project' : 'New project'"></h3>
+        <h3 class="font-semibold text-lg text-slate-900 dark:text-white" x-text="editingId ? 'Edit project' : 'New project'"></h3>
         <button @click="modalOpen = false" class="text-slate-400 hover:text-slate-700 dark:text-slate-300"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <form @submit.prevent="save()" class="p-5 space-y-4">
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1.5">Project name *</label>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 mb-1.5">Project name *</label>
           <input x-model="form.name" type="text" required
-                 class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none text-sm">
+                 class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
         </div>
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1.5">Description</label>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 mb-1.5">Description</label>
           <textarea x-model="form.description" rows="3"
-                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none text-sm"></textarea>
+                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white"></textarea>
         </div>
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1.5">Status</label>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 mb-1.5">Status</label>
           <select x-model="form.status"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm bg-white dark:bg-slate-800">
+                  class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
             <option value="not_started">Not started</option>
             <option value="in_progress">In progress</option>
             <option value="on_hold">On hold</option>
             <option value="completed">Completed</option>
           </select>
         </div>
-        <div x-show="error" class="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700 dark:text-red-400" x-text="error"></div>
+        <div x-show="error" class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 text-sm text-red-700 dark:text-red-400" x-text="error"></div>
         <div class="flex justify-end gap-2 pt-2">
-          <button type="button" @click="modalOpen = false" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 dark:bg-slate-700">Cancel</button>
+          <button type="button" @click="modalOpen = false" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Cancel</button>
           <button type="submit" :disabled="saving"
                   class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-brand-500 to-accent-500 hover:opacity-95 disabled:opacity-60">
             <span x-text="saving ? 'Saving...' : (editingId ? 'Save' : 'Create')"></span>
@@ -137,12 +137,12 @@
           <i data-lucide="alert-triangle" class="w-7 h-7 text-red-600 dark:text-red-400"></i>
         </div>
         <h3 class="font-bold text-lg text-slate-900 dark:text-white mb-1">Delete this project?</h3>
-        <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mb-1">
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-1">
           <span class="font-medium text-slate-700 dark:text-slate-300" x-text="deleteTarget?.name"></span>
         </p>
         <p class="text-xs text-red-600 dark:text-red-400 mb-5">All tasks and assignments will be deleted too.</p>
         <div class="flex gap-2 justify-center">
-          <button @click="deleteTarget = null" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200">Cancel</button>
+          <button @click="deleteTarget = null" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">Cancel</button>
           <button @click="doDelete()" :disabled="deleting" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-60">
             <span x-text="deleting ? 'Deleting...' : 'Yes, delete'"></span>
           </button>

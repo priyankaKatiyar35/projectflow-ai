@@ -11,7 +11,7 @@
         <i data-lucide="users" class="w-6 h-6 text-brand-500"></i>
         User management
       </h1>
-      <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-0.5">Add, edit, or remove team members</p>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Add, edit, or remove team members</p>
     </div>
     <button @click="openAdd()"
             class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-semibold shadow-lg shadow-brand-500/30 hover:opacity-95">
@@ -27,7 +27,7 @@
           <i data-lucide="users" class="w-5 h-5 text-white"></i>
         </div>
         <div>
-          <p class="text-xs uppercase text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium">Total users</p>
+          <p class="text-xs uppercase text-slate-500 dark:text-slate-400 font-medium">Total users</p>
           <p class="text-xl font-bold text-slate-900 dark:text-white" x-text="users.length"></p>
         </div>
       </div>
@@ -38,7 +38,7 @@
           <i data-lucide="shield-check" class="w-5 h-5 text-white"></i>
         </div>
         <div>
-          <p class="text-xs uppercase text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium">Admins</p>
+          <p class="text-xs uppercase text-slate-500 dark:text-slate-400 font-medium">Admins</p>
           <p class="text-xl font-bold text-slate-900 dark:text-white" x-text="users.filter(u => u.role === 'admin').length"></p>
         </div>
       </div>
@@ -49,7 +49,7 @@
           <i data-lucide="user" class="w-5 h-5 text-white"></i>
         </div>
         <div>
-          <p class="text-xs uppercase text-slate-500 dark:text-slate-400 dark:text-slate-500 font-medium">Employees</p>
+          <p class="text-xs uppercase text-slate-500 dark:text-slate-400 font-medium">Employees</p>
           <p class="text-xl font-bold text-slate-900 dark:text-white" x-text="users.filter(u => u.role === 'employee').length"></p>
         </div>
       </div>
@@ -61,14 +61,14 @@
     <div class="relative max-w-md">
       <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500"></i>
       <input x-model="search" type="text" placeholder="Search by name or email..."
-             class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm bg-white dark:bg-slate-800">
+             class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
     </div>
   </div>
 
   <!-- Users table -->
   <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
     <table class="w-full text-sm">
-      <thead class="bg-slate-50 dark:bg-slate-900/50 text-xs uppercase text-slate-500 dark:text-slate-400 dark:text-slate-500">
+      <thead class="bg-slate-50 dark:bg-slate-900/50 text-xs uppercase text-slate-500 dark:text-slate-400">
         <tr>
           <th class="px-4 py-3 text-left">Name</th>
           <th class="px-4 py-3 text-left">Email</th>
@@ -89,13 +89,13 @@
                       class="text-[10px] uppercase px-1.5 py-0.5 rounded bg-brand-100 text-brand-700 font-semibold">You</span>
               </div>
             </td>
-            <td class="px-4 py-3 text-slate-600 dark:text-slate-400 dark:text-slate-500" x-text="u.email"></td>
+            <td class="px-4 py-3 text-slate-600 dark:text-slate-400" x-text="u.email"></td>
             <td class="px-4 py-3">
               <span :class="u.role === 'admin' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'"
                     class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium capitalize"
                     x-text="u.role"></span>
             </td>
-            <td class="px-4 py-3 text-slate-500 dark:text-slate-400 dark:text-slate-500 text-xs"
+            <td class="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs"
                 x-text="u.last_online ? new Date(u.last_online).toLocaleString() : 'Never'"></td>
             <td class="px-4 py-3 text-right">
               <button @click="openEdit(u)"
@@ -134,7 +134,7 @@
        @keydown.escape.window="modalOpen = false">
     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md" @click.outside="modalOpen = false">
       <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-        <h3 class="font-semibold text-lg" x-text="editingId ? 'Edit user' : 'Add new user'"></h3>
+        <h3 class="font-semibold text-lg text-slate-900 dark:text-white" x-text="editingId ? 'Edit user' : 'Add new user'"></h3>
         <button @click="modalOpen = false" class="text-slate-400 hover:text-slate-700 dark:text-slate-300">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
@@ -142,42 +142,42 @@
 
       <form @submit.prevent="save()" class="p-5 space-y-4">
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1.5">Full name</label>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 mb-1.5">Full name</label>
           <input x-model="form.full_name" type="text" required
-                 class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm">
+                 class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
         </div>
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1.5">Email</label>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 mb-1.5">Email</label>
           <input x-model="form.email" type="email" required
-                 class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm">
+                 class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
         </div>
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1.5">
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 mb-1.5">
             <span x-text="editingId ? 'New password (leave blank to keep)' : 'Password'"></span>
           </label>
           <input x-model="form.password" type="password"
                  :required="!editingId"
                  minlength="6"
-                 class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm">
-          <p class="text-[11px] text-slate-500 dark:text-slate-400 dark:text-slate-500 mt-1">At least 6 characters</p>
+                 class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">At least 6 characters</p>
         </div>
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1.5">Role</label>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 mb-1.5">Role</label>
           <select x-model="form.role"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm bg-white dark:bg-slate-800">
+                  class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
             <option value="employee">Employee</option>
             <option value="admin">Admin</option>
           </select>
         </div>
 
-        <div x-show="error" class="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700 dark:text-red-400 flex gap-2">
+        <div x-show="error" class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 text-sm text-red-700 dark:text-red-400 flex gap-2">
           <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 mt-0.5"></i>
           <span x-text="error"></span>
         </div>
 
         <div class="flex justify-end gap-2 pt-2">
           <button type="button" @click="modalOpen = false"
-                  class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-100 dark:bg-slate-700">
+                  class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
             Cancel
           </button>
           <button type="submit" :disabled="saving"
@@ -199,7 +199,7 @@
           <i data-lucide="alert-triangle" class="w-7 h-7 text-red-600 dark:text-red-400"></i>
         </div>
         <h3 class="font-bold text-lg text-slate-900 dark:text-white mb-1">Delete this user?</h3>
-        <p class="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-500 mb-1">
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-1">
           <span class="font-medium text-slate-700 dark:text-slate-300" x-text="deleteTarget?.full_name"></span>
           will be permanently removed.
         </p>
@@ -232,11 +232,11 @@
         <button @click="resetResult = null" class="text-slate-400 hover:text-slate-700 dark:text-slate-300"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="p-5">
-        <p class="text-sm text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-4">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
           Share this link with <b x-text="resetResult?.user_name"></b> (<span x-text="resetResult?.user_email"></span>). They can use it to set a new password.
         </p>
         <div class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 rounded-lg break-all text-xs font-mono text-amber-900" x-text="resetResult?.reset_link"></div>
-        <div class="flex items-center justify-between mt-3 text-xs text-slate-500 dark:text-slate-400 dark:text-slate-500">
+        <div class="flex items-center justify-between mt-3 text-xs text-slate-500 dark:text-slate-400">
           <span>⏰ Expires in 1 hour</span>
           <button @click="copyResetLink()" class="text-brand-600 font-semibold hover:underline">
             <i data-lucide="copy" class="w-3 h-3 inline"></i> Copy link

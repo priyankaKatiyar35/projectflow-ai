@@ -171,28 +171,28 @@
                 <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Milestone phase</label>
                 <input x-model="taskForm.milestone_phase" type="text" placeholder="e.g. Phase 1, Design"
                        :disabled="editingTaskId && !IS_ADMIN"
-                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500">
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500 text-slate-900 dark:text-white">
               </div>
               <!-- Category -->
               <div>
                 <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Category</label>
                 <input x-model="taskForm.category" type="text" placeholder="e.g. Development, Testing"
                        :disabled="editingTaskId && !IS_ADMIN"
-                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500">
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500 text-slate-900 dark:text-white">
               </div>
               <!-- Task description -->
               <div class="col-span-2">
                 <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Task description *</label>
                 <textarea x-model="taskForm.task_description" required rows="2"
                           :disabled="editingTaskId && !IS_ADMIN"
-                          class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500"></textarea>
+                          class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500 text-slate-900 dark:text-white"></textarea>
               </div>
               <!-- Action item -->
               <div class="col-span-2">
                 <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Action item</label>
                 <input x-model="taskForm.action_item" type="text" placeholder="The CMMI-tracked action"
                        :disabled="editingTaskId && !IS_ADMIN"
-                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500">
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500 text-slate-900 dark:text-white">
               </div>
 
               <!-- Planned dates -->
@@ -200,25 +200,25 @@
                 <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Planned start</label>
                 <input x-model="taskForm.planned_start_date" type="date"
                        :disabled="editingTaskId && !IS_ADMIN"
-                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500">
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500 text-slate-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]">
               </div>
               <div>
                 <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Planned end</label>
                 <input x-model="taskForm.planned_end_date" type="date"
                        :disabled="editingTaskId && !IS_ADMIN"
-                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500">
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500 text-slate-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]">
               </div>
 
               <!-- Actual dates - editable by both -->
               <div>
                 <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 mb-1">Actual start</label>
                 <input x-model="taskForm.actual_start_date" type="date"
-                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-900/40 focus:border-emerald-500 outline-none text-sm">
+                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-900/40 focus:border-emerald-500 outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]">
               </div>
               <div>
                 <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 mb-1">Actual end</label>
                 <input x-model="taskForm.actual_end_date" type="date"
-                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-900/40 focus:border-emerald-500 outline-none text-sm">
+                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-900/40 focus:border-emerald-500 outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]">
               </div>
 
               <!-- Effort -->
@@ -226,19 +226,19 @@
                 <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Planned effort (hours)</label>
                 <input x-model.number="taskForm.planned_effort" type="number" step="0.5" min="0"
                        :disabled="editingTaskId && !IS_ADMIN"
-                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500">
+                       class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm disabled:bg-slate-50 dark:bg-slate-900/50 disabled:text-slate-500 dark:text-slate-400 dark:text-slate-500 text-slate-900 dark:text-white">
               </div>
               <div>
                 <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 mb-1">Actual effort (hours)</label>
                 <input x-model.number="taskForm.actual_effort" type="number" step="0.5" min="0"
-                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-900/40 focus:border-emerald-500 outline-none text-sm">
+                       class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-900/40 focus:border-emerald-500 outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
               </div>
 
               <!-- Status -->
               <div>
                 <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 mb-1">Status</label>
                 <select x-model="taskForm.status"
-                        class="w-full px-3 py-2 rounded-lg border border-emerald-200 focus:border-emerald-500 outline-none text-sm bg-white dark:bg-slate-800">
+                        class="w-full px-3 py-2 rounded-lg border border-emerald-200 focus:border-emerald-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
                   <option value="not_started">Not started</option>
                   <option value="in_progress">In progress</option>
                   <option value="on_hold">On hold</option>
@@ -250,7 +250,7 @@
               <div x-show="IS_ADMIN">
                 <label class="block text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Assigned to</label>
                 <select x-model="taskForm.assignee_ids" multiple size="3"
-                        class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm bg-white dark:bg-slate-800">
+                        class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
                   <template x-for="u in allUsers" :key="u.id">
                     <option :value="u.id" x-text="u.full_name"></option>
                   </template>
@@ -262,7 +262,7 @@
               <div class="col-span-2">
                 <label class="block text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 mb-1">Remarks</label>
                 <textarea x-model="taskForm.remarks" rows="2"
-                          class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-900/40 focus:border-emerald-500 outline-none text-sm"></textarea>
+                          class="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-900/40 focus:border-emerald-500 outline-none text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white"></textarea>
               </div>
             </div>
 
@@ -347,7 +347,7 @@
                     <template x-if="editingCommentId === c.id">
                       <div>
                         <textarea x-model="editingCommentText" rows="3"
-                                  class="w-full text-sm px-2 py-1 rounded border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none"></textarea>
+                                  class="w-full text-sm px-2 py-1 rounded border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white"></textarea>
                         <div class="flex gap-1 mt-1">
                           <button @click="saveCommentEdit(c)" class="text-xs px-2 py-1 rounded bg-brand-500 text-white">Save</button>
                           <button @click="editingCommentId = null" class="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-700">Cancel</button>
@@ -371,7 +371,7 @@
               <textarea x-model="newComment" rows="2"
                         @keydown.enter.exact.prevent="postComment()"
                         placeholder="Write a comment... (use @Name to mention someone)"
-                        class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none resize-none"></textarea>
+                        class="flex-1 text-sm px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none resize-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white"></textarea>
               <button type="submit" :disabled="posting || !newComment.trim()"
                       class="px-4 py-2 rounded-lg bg-gradient-to-r from-brand-500 to-accent-500 text-white text-sm font-semibold disabled:opacity-50">
                 <i data-lucide="send" class="w-4 h-4"></i>

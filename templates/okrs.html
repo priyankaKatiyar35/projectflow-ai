@@ -19,7 +19,7 @@
       <!-- Period filter -->
       <div class="relative">
         <select x-model="filters.period" @change="load()"
-                class="appearance-none px-3 py-2 pr-8 rounded-lg border border-slate-200 text-sm focus:border-brand-500 outline-none bg-white dark:bg-slate-800">
+                class="appearance-none px-3 py-2 pr-8 rounded-lg border border-slate-200 text-sm focus:border-brand-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
           <option value="">All periods</option>
           <template x-for="p in periods" :key="p">
             <option :value="p" x-text="p"></option>
@@ -31,7 +31,7 @@
       <!-- Status filter -->
       <div class="relative">
         <select x-model="filters.status" @change="load()"
-                class="appearance-none px-3 py-2 pr-8 rounded-lg border border-slate-200 text-sm focus:border-brand-500 outline-none bg-white dark:bg-slate-800">
+                class="appearance-none px-3 py-2 pr-8 rounded-lg border border-slate-200 text-sm focus:border-brand-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
           <option value="">All statuses</option>
           <option value="on_track">On track</option>
           <option value="at_risk">At risk</option>
@@ -204,26 +204,26 @@
           <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Objective title *</label>
           <input x-model="form.title" required maxlength="300"
                  placeholder="e.g. Become the #1 CMMI tool in India"
-                 class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
+                 class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
         </div>
 
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Description</label>
           <textarea x-model="form.description" rows="2"
                     placeholder="Why this matters..."
-                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none"></textarea>
+                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white"></textarea>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Period label *</label>
             <input x-model="form.period_label" required maxlength="30" placeholder="e.g. 2026-Q2"
-                   class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
+                   class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
           </div>
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Category</label>
             <input x-model="form.category" maxlength="50" placeholder="e.g. Revenue / Product / People"
-                   class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
+                   class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
           </div>
         </div>
 
@@ -231,12 +231,12 @@
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Period start</label>
             <input x-model="form.period_start" type="date"
-                   class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
+                   class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]">
           </div>
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Period end</label>
             <input x-model="form.period_end" type="date"
-                   class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
+                   class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white [color-scheme:light] dark:[color-scheme:dark]">
           </div>
         </div>
 
@@ -244,7 +244,7 @@
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Owner *</label>
             <select x-model="form.owner_id" required
-                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
+                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
               <option :value="CURRENT_USER_ID">Me (<span x-text="CURRENT_USER_NAME"></span>)</option>
               <template x-for="u in allUsers" :key="u.id">
                 <option :value="u.id" x-text="u.full_name + ' · ' + u.role"></option>
@@ -254,7 +254,7 @@
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Visibility</label>
             <select x-model="form.visibility"
-                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
+                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
               <option value="company">Company (visible to all)</option>
               <option value="private">Private (only owner + admin)</option>
             </select>
@@ -264,7 +264,7 @@
         <div>
           <label class="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1">Status</label>
           <select x-model="form.status_override"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none">
+                  class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 focus:border-brand-500 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
             <option value="">Auto (calculated from KRs &amp; time)</option>
             <option value="on_track">On track</option>
             <option value="at_risk">At risk</option>
@@ -285,17 +285,17 @@
               <template x-for="(kr, idx) in form.key_results" :key="idx">
                 <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg space-y-2">
                   <input x-model="kr.title" placeholder="KR title (e.g. Acquire 50 customers)"
-                         class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700 outline-none">
+                         class="w-full px-2 py-1.5 text-sm rounded border border-slate-200 dark:border-slate-700 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                   <div class="grid grid-cols-4 gap-2">
-                    <select x-model="kr.kr_type" class="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700">
+                    <select x-model="kr.kr_type" class="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                       <option value="numeric">Numeric</option>
                       <option value="percent">Percent</option>
                       <option value="boolean">Done/Not done</option>
                       <option value="milestone">Milestones</option>
                     </select>
-                    <input x-model.number="kr.start_value" type="number" step="any" placeholder="Start" class="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700">
-                    <input x-model.number="kr.target_value" type="number" step="any" placeholder="Target" class="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700">
-                    <input x-model="kr.unit" placeholder="Unit (e.g. $, %, customers)" class="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700">
+                    <input x-model.number="kr.start_value" type="number" step="any" placeholder="Start" class="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                    <input x-model.number="kr.target_value" type="number" step="any" placeholder="Target" class="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                    <input x-model="kr.unit" placeholder="Unit (e.g. $, %, customers)" class="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                   </div>
                   <button type="button" @click="form.key_results.splice(idx,1)" class="text-[10px] text-red-500 hover:underline">Remove</button>
                 </div>
@@ -327,9 +327,9 @@
       </div>
       <form @submit.prevent="saveKR()" class="p-5 space-y-3">
         <input x-model="krForm.title" required placeholder="KR title"
-               class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
+               class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
         <select x-model="krForm.kr_type"
-                class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
+                class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
           <option value="numeric">Numeric (e.g. 100 → 500)</option>
           <option value="percent">Percent (target = N%)</option>
           <option value="boolean">Done / Not done</option>
@@ -337,14 +337,14 @@
         </select>
         <div class="grid grid-cols-3 gap-2">
           <input x-model.number="krForm.start_value" type="number" step="any" placeholder="Start"
-                 class="px-2 py-2 text-sm rounded border border-slate-200 dark:border-slate-700">
+                 class="px-2 py-2 text-sm rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
           <input x-model.number="krForm.current_value" type="number" step="any" placeholder="Current"
-                 class="px-2 py-2 text-sm rounded border border-slate-200 dark:border-slate-700">
+                 class="px-2 py-2 text-sm rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
           <input x-model.number="krForm.target_value" required type="number" step="any" placeholder="Target *"
-                 class="px-2 py-2 text-sm rounded border border-slate-200 dark:border-slate-700">
+                 class="px-2 py-2 text-sm rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
         </div>
         <input x-model="krForm.unit" placeholder="Unit (optional)"
-               class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
+               class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
 
         <div class="flex gap-2 justify-end pt-2">
           <button type="button" @click="krModalOpen = false" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-medium">Cancel</button>
@@ -371,12 +371,12 @@
           <label class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1 block">New value *</label>
           <input x-model.number="checkin.value_at_checkin" required type="number" step="any"
                  :placeholder="`Target: ${checkinKR?.target_value} ${checkinKR?.unit || ''}`"
-                 class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
+                 class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
         </div>
         <div>
           <label class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1 block">Confidence</label>
           <select x-model="checkin.confidence"
-                  class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none">
+                  class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
             <option value="">--</option>
             <option value="high">🟢 High - on track</option>
             <option value="medium">🟡 Medium - some risk</option>
@@ -386,7 +386,7 @@
         <div>
           <label class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 dark:text-slate-500 mb-1 block">Note</label>
           <textarea x-model="checkin.note" rows="2" placeholder="What happened this week?"
-                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none"></textarea>
+                    class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white"></textarea>
         </div>
 
         <div class="flex gap-2 justify-end pt-2">
