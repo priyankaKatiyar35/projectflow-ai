@@ -23,13 +23,6 @@ Thumbs.db
 .env
 .env.local
 
-# Database (contains real user data - never upload!)
-data/*.db
-data/*.sqlite
-
-# Uploaded files (never push user uploads to git)
-data/uploads/
-
 # Build / packaging
 *.egg-info/
 dist/
@@ -37,3 +30,18 @@ build/
 
 # Logs
 *.log
+
+# Database
+data/timesheet.db
+data/*.db
+data/*.sqlite
+
+# Uploads
+data/uploads/
+
+# Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+ 
