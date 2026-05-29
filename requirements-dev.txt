@@ -1,4 +1,4 @@
-# Development & testing dependencies
+
 # Install with: pip install -r requirements-dev.txt
 
 # Production deps (re-include base)
