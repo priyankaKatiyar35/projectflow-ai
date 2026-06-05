@@ -21,16 +21,20 @@
 
 ## 🎯 Overview
 
-**ProjectFlow AI** is a production-grade project management platform built for **CMMI-compliant software organizations**. Unlike generic tools like Asana or Monday, it captures the specific artifacts CMMI Level 2–3 auditors require: planned-vs-actual schedules, append-only audit trails, role-segregated permissions, and traceable evidence collection.
+**ProjectFlow AI** is a production-grade project management platform built for **CMMI-compliant software organizations**. it captures the specific artifacts CMMI Level 2–3 auditors require: planned-vs-actual schedules, append-only audit trails, role-segregated permissions, and traceable evidence collection.
 
 It combines a modern PM tool (Kanban, Gantt, Calendar, OKRs) with **real AI integration** (Google Gemini), **WebSocket real-time updates**, and **PWA installability** — wrapped in a fully tested FastAPI codebase.
 
-> Built solo. ~6,000 lines of Python, ~6,000 lines of templates, 99 automated tests, fully deployed.
+## Why I Built This
+
+I originally started this project to explore how project management software could better support process-heavy teams. While tools like Jira and Asana handle task tracking well, I wanted to experiment with audit logging, planned-vs-actual tracking, and AI-assisted reporting in a single application.
+
+The project also became a way to learn FastAPI, WebSockets, PWA development, and automated testing in a larger codebase.
 
 ### 🎬 Try the demo
 
-> **Demo credentials:** `demo@projectflow.ai` / `demo1234`
-> Live URL: https://projectflow-ai.onrender.com
+  **Demo credentials:** `demo@projectflow.ai` / `demo1234`
+  Live URL: https://projectflow-ai.onrender.com
 
 ---
 
