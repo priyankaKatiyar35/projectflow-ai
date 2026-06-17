@@ -19,7 +19,7 @@
 
 ---
 
-## 🎯 Overview
+## Overview
 
 **ProjectFlow AI** is a production-grade project management platform built for **CMMI-compliant software organizations**. it captures the specific artifacts CMMI Level 2–3 auditors require: planned-vs-actual schedules, append-only audit trails, role-segregated permissions, and traceable evidence collection.
 
@@ -40,7 +40,7 @@ The project also became a way to learn FastAPI, WebSockets, PWA development, and
 
 ## ✨ Key Features
 
-### 📊 Four ways to view your work
+### Four ways to view your work
 
 | View | Purpose | Best for |
 |------|---------|----------|
@@ -50,7 +50,7 @@ The project also became a way to learn FastAPI, WebSockets, PWA development, and
 | **Calendar** | Monthly grid | Deadline planning |
 | **Gantt** | Timeline with planned vs actual bars | CMMI compliance |
 
-### 🤖 AI features (Google Gemini)
+### AI features (Google Gemini)
 
 - **Ask AI** — chat with your data ("Who is overloaded?", "What's overdue?")
 - **Natural task parser** — `"Fix login bug by Friday, high priority"` → structured fields
@@ -60,7 +60,7 @@ The project also became a way to learn FastAPI, WebSockets, PWA development, and
 - **Effort forecasting** — estimates hours from a description
 - **Workload analysis** — detects imbalances across the team
 
-### 🛡️ CMMI Level 2–3 ready
+###  CMMI Level 2–3 ready
 
 - **Append-only audit log** — every change captured with before/after diffs
 - **Role-based access control** — admin vs employee with field-level permissions
@@ -69,7 +69,7 @@ The project also became a way to learn FastAPI, WebSockets, PWA development, and
 - **CSV/Excel/PDF exports** — auditor-friendly artifacts
 - **File attachments** — evidence collection on every task
 
-### ⚡ Real-time & Modern
+###  Real-time & Modern
 
 - **WebSocket push** — notifications arrive instantly (no polling)
 - **PWA installable** — install on phone/desktop like a native app
@@ -78,7 +78,7 @@ The project also became a way to learn FastAPI, WebSockets, PWA development, and
 - **Email notifications** — SMTP with per-user preferences
 - **Global search** — `Cmd+K` palette across projects/tasks/users/comments/OKRs
 
-### 🎯 Goals & OKRs
+###  Goals & OKRs
 
 - 4 Key Result types: numeric, percent, boolean, milestone
 - Progress check-ins with history
@@ -94,7 +94,7 @@ The project also became a way to learn FastAPI, WebSockets, PWA development, and
 
 ---
 
-## 📸 Screenshots
+##  Screenshots
 
 
 <table>
@@ -163,7 +163,7 @@ The project also became a way to learn FastAPI, WebSockets, PWA development, and
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -246,7 +246,7 @@ The project also became a way to learn FastAPI, WebSockets, PWA development, and
 
 ---
 
-## ⚡ Quick Start
+##  Quick Start
 
 ### Prerequisites
 - Python 3.12+
@@ -298,8 +298,7 @@ SECRET_KEY=generate-a-long-random-string
 ```
 
 ---
-
-## 🧪 Testing
+##  Testing
 
 ```bash
 # Install dev dependencies
@@ -333,7 +332,7 @@ Each test gets an **isolated in-memory SQLite database** via FastAPI dependency 
 
 ---
 
-## 🔒 Security
+##  Security
 
 - **Bcrypt password hashing** with proper salting
 - **Session-based auth** with signed cookies (Starlette `SessionMiddleware`)
@@ -345,12 +344,11 @@ Each test gets an **isolated in-memory SQLite database** via FastAPI dependency 
 - **Audit logging** of sensitive events (logins, role changes, deletions)
 - **No secrets in repo** — `.env` is gitignored; example file provided
 
-> ⚠️ For production: enable HTTPS-only cookies, set up reverse-proxy rate limiting, switch to PostgreSQL, rotate `SECRET_KEY`.
+> For production: enable HTTPS-only cookies, set up reverse-proxy rate limiting, switch to PostgreSQL, rotate `SECRET_KEY`.
 
 ---
 
-## 📦 Project Structure
-
+##  Project Structure
 ```
 projectflow-ai/
 ├── app/
@@ -403,7 +401,7 @@ projectflow-ai/
 
 ---
 
-## 🚀 Deployment
+##  Deployment
 
 ### Render.com (free tier)
 
@@ -445,7 +443,7 @@ A few things in this codebase I'm particularly proud of:
 
 ---
 
-## 📍 Roadmap
+##  Roadmap
 
 - [ ] PostgreSQL migration scripts + connection pooling
 - [ ] Redis caching layer for analytics
@@ -459,7 +457,7 @@ A few things in this codebase I'm particularly proud of:
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 Pull requests welcome. For major changes, open an issue first.
 
@@ -471,13 +469,13 @@ pytest                            # Run tests before opening PR
 
 ---
 
-## 📄 License
+##  License
 
 MIT — see [LICENSE](LICENSE).
 
 ---
 
-## 👤 Author
+##  Author
 
 **Priyanka Katiyar**
 
