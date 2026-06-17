@@ -31,14 +31,14 @@ I originally started this project to explore how project management software cou
 
 The project also became a way to learn FastAPI, WebSockets, PWA development, and automated testing in a larger codebase.
 
-### 🎬 Try the demo
+###  Try the demo
 
   **Demo credentials:** `demo@projectflow.ai` / `demo1234`
   Live URL: https://projectflow-ai.onrender.com
 
 ---
 
-## ✨ Key Features
+##  Key Features
 
 ### Four ways to view your work
 
@@ -427,7 +427,7 @@ Works on any Python PaaS: Railway, Fly.io, Heroku, AWS App Runner, Google Cloud 
 
 ---
 
-## 🎓 Engineering highlights
+##  Engineering highlights
 
 A few things in this codebase I'm particularly proud of:
 
